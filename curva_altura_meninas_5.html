@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<title>Altura para Idade – Meninas 5 a 19 anos (OMS)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    padding: 20px;
+  }
+
+  .page {
+    background: white;
+    width: 297mm;
+    min-height: 210mm;
+    margin: 0 auto;
+    padding: 10mm 10mm 8mm 10mm;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+
+  /* ── FORMULÁRIO ── */
+  .form-panel {
+    background: #f7f0f7;
+    border: 1px solid #d8a8d8;
+    border-radius: 6px;
+    padding: 10px 14px 8px;
+    margin-bottom: 10px;
+  }
+  .form-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .form-row + .form-row {
+    padding-top: 6px;
+    border-top: 1px dashed #d0b0d0;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+  .form-panel label {
+    font-size: 11px;
+    color: #555;
+    margin-bottom: 3px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .form-panel input[type="date"],
+  .form-panel input[type="number"],
+  .form-panel input[type="text"] {
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 13px;
+  }
+  input#refdate { width: 145px; background: #fffbe6; border-color: #c9a800; }
+  input#dob     { width: 145px; }
+  input#ht      { width: 100px; }
+  input#lbl     { width: 160px; }
+  .form-panel button {
+    background: #d63384;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: bold;
+    align-self: flex-end;
+  }
+  .form-panel button:hover { background: #b5206e; }
+  .btn-clear {
+    background: #888 !important;
+  }
+  .btn-clear:hover { background: #555 !important; }
+  .form-hint {
+    font-size: 11px;
+    color: #888;
+    align-self: flex-end;
+    padding-bottom: 6px;
+  }
+  #error-msg {
+    font-size: 12px;
+    color: #c0392b;
+    min-height: 16px;
+    margin-top: 4px;
+  }
+  .bp-result {
+    background: #eaf4ea;
+    border: 1px solid #7bba7b;
+    border-radius: 5px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: #1a5c1a;
+    line-height: 1.6;
+    margin-top: 6px;
+    display: inline-block;
+  }
+  .bp-result strong { font-size: 15px; }
+  .bp-result.empty { background:#f5f5f5; border-color:#ccc; color:#999; font-style:italic; }
+
+  /* ── CABEÇALHO DO GRÁFICO ── */
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2px;
+  }
+  .chart-title {
+    font-size: 22px;
+    color: #c060c0;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .chart-subtitle {
+    font-size: 13px;
+    color: #333;
+    margin-top: 2px;
+  }
+  .who-logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .who-logo-circle {
+    width: 44px;
+    height: 44px;
+  }
+  .who-logo-text {
+    text-align: right;
+    font-size: 11px;
+    line-height: 1.3;
+    color: #333;
+  }
+
+  /* ── WRAPPER DO GRÁFICO ── */
+  .chart-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  canvas#whoChart {
+    display: block;
+    width: 100% !important;
+  }
+
+  /* ── LISTA DE PONTOS ── */
+  .points-list {
+    margin-top: 8px;
+    font-size: 11px;
+  }
+  .points-list table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .points-list th {
+    background: #e0a0e0;
+    padding: 3px 8px;
+    text-align: left;
+    font-size: 11px;
+    border: 1px solid #ccc;
+  }
+  .points-list td {
+    padding: 3px 8px;
+    border: 1px solid #ddd;
+    font-size: 11px;
+  }
+  .dot-preview {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+    border: 1.5px solid white;
+    outline: 1px solid rgba(0,0,0,0.3);
+  }
+  .btn-del {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    font-size: 14px;
+    padding: 0 2px;
+  }
+  .btn-del:hover { color: #c0392b; }
+
+  .footer-ref {
+    font-size: 10px;
+    color: #666;
+    text-align: right;
+    margin-top: 4px;
+  }
+
+  /* ── GERENCIADOR DE PACIENTES ── */
+  .patient-panel {
+    background: #f0f7ff;
+    border: 1px solid #a8c8e8;
+    border-radius: 6px;
+    padding: 10px 14px 8px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .patient-panel label {
+    font-size: 11px; color: #336; font-weight: bold;
+    text-transform: uppercase; letter-spacing: 0.03em;
+    display: block; margin-bottom: 3px;
+  }
+  .patient-panel input, .patient-panel select {
+    border: 1px solid #99b; border-radius: 4px;
+    padding: 5px 8px; font-size: 13px;
+  }
+  .patient-panel button {
+    background: #2a6099; color: white; border: none;
+    border-radius: 4px; padding: 7px 13px; font-size: 13px;
+    cursor: pointer; font-weight: bold; align-self: flex-end;
+  }
+  .patient-panel button:hover { background: #1a4070; }
+  .btn-export { background: #5a7a2a !important; }
+  .btn-export:hover { background: #3a5a10 !important; }
+  .btn-import { background: #7a4a2a !important; }
+  .btn-import:hover { background: #5a3010 !important; }
+  .btn-newpt  { background: #2a6099 !important; }
+  .btn-save   { background: #1a7a1a !important; }
+  .btn-save:hover { background: #0f5a0f !important; }
+  .btn-drive  { background: #1a73e8 !important; }
+  .btn-drive:hover { background: #1557b0 !important; }
+  .drive-status {
+    font-size: 11px; padding: 3px 10px; border-radius: 3px;
+    border: 1px solid #ccc; background: #f8f8f8; color: #555;
+    align-self: flex-end; white-space: nowrap;
+  }
+  .drive-status.connected { background: #e8f5e9; border-color: #81c784; color: #2e7d32; }
+  .drive-status.error     { background: #fdecea; border-color: #e57373; color: #c62828; }
+  .btn-save:hover { background: #0f5a0f !important; }
+  .btn-delpt  { background: #992222 !important; }
+  .btn-delpt:hover  { background: #660000 !important; }
+  .saved-badge {
+    font-size: 11px; color: #3a7a3a; background: #d8f0d8;
+    border: 1px solid #9ac89a; border-radius: 3px;
+    padding: 2px 8px; margin-left: 6px; display: none;
+  }
+  .unsaved-badge {
+    font-size: 11px; color: #996600; background: #fff5cc;
+    border: 1px solid #ddaa44; border-radius: 3px;
+    padding: 2px 8px; margin-left: 4px; display: none;
+  }
+
+  .search-wrap { position: relative; }
+  #searchSuggestions {
+    display: none; position: absolute; top: 100%; left: 0; z-index: 999;
+    background: white; border: 1px solid #99b; border-radius: 0 0 4px 4px;
+    min-width: 200px; max-height: 200px; overflow-y: auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  }
+  #searchSuggestions li {
+    list-style: none; padding: 7px 12px; cursor: pointer; font-size: 13px;
+  }
+  #searchSuggestions li:hover { background: #e8f0ff; }
+
+  @media print {
+    .patient-panel { display: none; }
+  }
+  @media print {
+    body { background: white; padding: 0; }
+    .page { box-shadow: none; width: 100%; padding: 8mm; }
+    .form-panel { display: none; }
+    .btn-del { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Gerenciador de Pacientes -->
+  <div class="patient-panel" id="patientPanel">
+    <div class="form-group">
+      <label>Buscar paciente</label>
+      <div class="search-wrap">
+        <input type="text" id="searchInput" placeholder="Digite nome ou ID..." style="width:200px"
+               oninput="onSearchInput()" onkeydown="if(event.key==='Enter')searchPatient()">
+        <ul id="searchSuggestions"></ul>
+      </div>
+    </div>
+    <button class="btn-newpt" onclick="searchPatient()" title="Buscar e carregar paciente">🔍 Carregar</button>
+    <button class="btn-newpt" onclick="newPatient()" title="Limpar gráfico para nova paciente">＋ Nova paciente</button>
+    <button class="btn-save"  onclick="savePatient()" title="Salvar dados da paciente atual">💾 Salvar</button>
+    <button class="btn-delpt" onclick="deletePatient()" title="Apagar paciente">🗑 Apagar</button>
+    <div style="flex:1"></div>
+    <button class="btn-drive" onclick="driveSignIn()" id="btnDriveLogin" title="Conectar ao Google Drive">
+      <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px;margin-right:4px"><path fill="white" d="M4.56 13.32L1.44 8l3.12-5.32h6.24L13.92 8l-3.12 5.32zm6.36 5.36L8.76 15h6.48l2.16 3.68zm8.64-5.36h-6.24L10.2 8l3.12-5.32h.12L22.56 8z"/></svg>Drive
+    </button>
+    <span class="drive-status" id="driveStatus">não conectado</span>
+    <button class="btn-export" onclick="exportData()">⬇ Backup</button>
+    <button class="btn-import" onclick="document.getElementById('importFile').click()">⬆ Restaurar</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    <span class="saved-badge" id="savedBadge">✓ Salvo no Drive</span>
+    <span class="unsaved-badge" id="unsavedBadge">● não salvo</span>
+  </div>
+
+  <!-- Formulário -->
+  <div class="form-panel" id="formPanel">
+    <!-- Linha 1: data da consulta -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>📅 Data da consulta</label>
+        <input type="date" id="refdate">
+      </div>
+      <span class="form-hint">← Ajuste se necessário (padrão: hoje)</span>
+    </div>
+    <!-- Linha 2: dados da paciente -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data de nascimento</label>
+        <input type="date" id="dob">
+      </div>
+      <div class="form-group">
+        <label>Paciente / ID</label>
+        <input type="text" id="lbl" placeholder="Nome ou código">
+      </div>
+      <div class="form-group">
+        <label>Altura (cm)</label>
+        <input type="number" id="ht" min="60" max="200" step="0.1" placeholder="ex: 132.5" oninput="updateBP()">
+      </div>
+      <div class="form-group">
+        <label>Idade óssea (anos) <span style="font-weight:normal;color:#888">opcional</span></label>
+        <input type="number" id="boneage" min="1" max="19" step="0.1" placeholder="ex: 10.5" style="width:110px" oninput="updateBP()">
+      </div>
+      <div class="form-group">
+        <label>Maturação óssea</label>
+        <select id="maturation" style="width:110px;border:1px solid #bbb;border-radius:4px;padding:5px 6px;font-size:13px;" onchange="updateBP()">
+          <option value="normal">Normal</option>
+          <option value="atrasada">Atrasada</option>
+          <option value="avancada">Avançada</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Previsão Bayley-Pinneau</label>
+        <div class="bp-result empty" id="bpResult">preencha altura e I.O.</div>
+      </div>
+      <button onclick="addPoint()">＋ Marcar no gráfico</button>
+      <button class="btn-clear" onclick="clearAll()">Limpar tudo</button>
+    </div>
+    <!-- Linha 3: altura alvo -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Estatura pai (cm) <span style="font-weight:normal;color:#888">opcional</span></label>
+        <input type="number" id="fatherHt" min="100" max="220" step="0.1" placeholder="ex: 175.0" style="width:120px" oninput="calcTargetHeight()">
+      </div>
+      <div class="form-group">
+        <label>Estatura mãe (cm) <span style="font-weight:normal;color:#888">opcional</span></label>
+        <input type="number" id="motherHt" min="100" max="220" step="0.1" placeholder="ex: 162.0" style="width:120px" oninput="calcTargetHeight()">
+      </div>
+      <div class="form-group">
+        <label>Altura alvo (cm) <span style="font-weight:normal;color:#888">± 5 cm</span></label>
+        <input type="number" id="targetHt" min="100" max="220" step="0.1" placeholder="calculado ou manual" style="width:140px" oninput="updateTargetBand()">
+      </div>
+      <button onclick="applyTargetHeight()" style="background:#7b2d8b">🎯 Mostrar alvo no gráfico</button>
+      <button onclick="clearTargetHeight()" style="background:#888;color:white;border:none;border-radius:4px;padding:7px 12px;font-size:13px;cursor:pointer">✕ Remover alvo</button>
+    </div>
+    <div id="error-msg"></div>
+  </div>
+
+  <!-- Cabeçalho -->
+  <div class="chart-header">
+    <div>
+      <div class="chart-title">Height-for-age &nbsp; GIRLS</div>
+      <div class="chart-subtitle">5 to 19 years (z-scores)</div>
+    </div>
+    <div class="who-logo">
+      <!-- WHO emblem SVG simplificado -->
+      <svg class="who-logo-circle" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="48" fill="none" stroke="#00529b" stroke-width="4"/>
+        <ellipse cx="50" cy="50" rx="48" ry="22" fill="none" stroke="#00529b" stroke-width="2.5"/>
+        <ellipse cx="50" cy="50" rx="20" ry="48" fill="none" stroke="#00529b" stroke-width="2.5"/>
+        <line x1="2" y1="50" x2="98" y2="50" stroke="#00529b" stroke-width="2.5"/>
+        <rect x="44" y="10" width="12" height="30" rx="2" fill="#00529b"/>
+        <rect x="38" y="22" width="24" height="8" rx="2" fill="#00529b"/>
+      </svg>
+      <div class="who-logo-text"><strong>World Health</strong><br>Organization</div>
+    </div>
+  </div>
+
+  <!-- Canvas do gráfico -->
+  <div class="chart-wrapper">
+    <canvas id="whoChart"></canvas>
+  </div>
+
+  <div class="footer-ref">2007 WHO Reference</div>
+  <div id="symbolLegend" style="display:none; font-size:11px; color:#444; margin-top:4px; display:flex; gap:20px; flex-wrap:wrap;">
+    <span><svg width="14" height="14" style="vertical-align:middle;margin-right:3px"><circle cx="7" cy="7" r="6" fill="#1565C0" stroke="white" stroke-width="1.5"/></svg> Bolinha = Idade cronológica</span>
+    <span><svg width="14" height="14" style="vertical-align:middle;margin-right:3px"><line x1="1" y1="1" x2="13" y2="13" stroke="#1565C0" stroke-width="2.5"/><line x1="13" y1="1" x2="1" y2="13" stroke="#1565C0" stroke-width="2.5"/></svg> X = Idade óssea</span>
+  </div>
+
+  <!-- Tabela de pontos -->
+  <div class="points-list" id="ptsList" style="display:none">
+    <table>
+      <thead>
+        <tr>
+          <th>Paciente</th>
+          <th>Data consulta</th>
+          <th>Data nasc.</th>
+          <th>Idade cronológica</th>
+          <th>Idade óssea</th>
+          <th>Maturação</th>
+          <th>Altura (cm)</th>
+          <th>Z-score (ic)</th>
+          <th>Z-score (io)</th>
+          <th>Prev. estatura (BP)</th>
+          <th class="no-print"></th>
+        </tr>
+      </thead>
+      <tbody id="ptsTbody"></tbody>
+    </table>
+  </div>
+
+</div><!-- .page -->
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── DADOS OMS (meses 61–228, colunas: Z+3, Z+2, Z+1, Z0, Z-1, Z-2, Z-3) ──
+const RAW = [
+[61,109.4,106.7,104.0,101.1,98.3,95.4,92.5],[62,110.2,107.5,104.7,101.9,99.0,96.1,93.2],
+[63,111.0,108.2,105.5,102.6,99.7,96.8,93.9],[64,111.8,109.0,106.2,103.3,100.4,97.5,94.6],
+[65,112.6,109.8,107.0,104.0,101.1,98.2,95.3],[66,113.4,110.6,107.7,104.8,101.9,98.9,96.0],
+[67,114.2,111.3,108.5,105.5,102.6,99.7,96.7],[68,115.0,112.1,109.2,106.3,103.3,100.4,97.4],
+[69,115.7,112.8,110.0,107.0,104.1,101.1,98.1],[70,116.5,113.6,110.7,107.7,104.8,101.8,98.9],
+[71,117.3,114.3,111.4,108.5,105.5,102.5,99.6],[72,118.0,115.1,112.2,109.2,106.2,103.2,100.3],
+[73,118.8,115.8,112.9,109.9,106.9,103.9,101.0],[74,119.5,116.5,113.6,110.6,107.6,104.6,101.6],
+[75,120.2,117.3,114.3,111.3,108.3,105.3,102.3],[76,121.0,118.0,115.0,112.0,109.0,106.0,103.0],
+[77,121.7,118.7,115.7,112.7,109.7,106.6,103.6],[78,122.4,119.4,116.4,113.3,110.3,107.3,104.2],
+[79,123.1,120.1,117.1,114.0,111.0,107.9,104.9],[80,123.8,120.8,117.7,114.7,111.6,108.6,105.5],
+[81,124.5,121.4,118.4,115.3,112.2,109.2,106.1],[82,125.2,122.1,119.0,115.9,112.9,109.8,106.7],
+[83,125.9,122.8,119.7,116.6,113.5,110.4,107.3],[84,126.6,123.5,120.3,117.2,114.1,111.0,107.9],
+[85,127.2,124.1,121.0,117.8,114.7,111.5,108.4],[86,127.9,124.8,121.6,118.4,115.3,112.1,109.0],
+[87,128.6,125.4,122.2,119.1,115.9,112.7,109.5],[88,129.2,126.0,122.8,119.7,116.5,113.3,110.1],
+[89,129.9,126.7,123.5,120.3,117.1,113.9,110.7],[90,130.5,127.3,124.1,120.9,117.7,114.5,111.2],
+[91,131.2,128.0,124.7,121.5,118.3,115.0,111.8],[92,131.8,128.6,125.3,122.1,118.8,115.6,112.3],
+[93,132.5,129.2,125.9,122.7,119.4,116.1,112.9],[94,133.1,129.8,126.5,123.2,120.0,116.7,113.4],
+[95,133.7,130.4,127.1,123.8,120.5,117.2,113.9],[96,134.3,131.0,127.7,124.4,121.1,117.8,114.4],
+[97,134.9,131.6,128.3,124.9,121.6,118.3,115.0],[98,135.6,132.2,128.9,125.5,122.2,118.9,115.5],
+[99,136.2,132.8,129.4,126.1,122.7,119.4,116.0],[100,136.8,133.4,130.0,126.6,123.3,119.9,116.5],
+[101,137.4,134.0,130.6,127.2,123.8,120.4,117.0],[102,138.0,134.6,131.1,127.7,124.3,120.9,117.5],
+[103,138.6,135.1,131.7,128.3,124.8,121.4,118.0],[104,139.1,135.7,132.2,128.8,125.4,121.9,118.5],
+[105,139.7,136.2,132.8,129.3,125.9,122.4,119.0],[106,140.3,136.8,133.3,129.8,126.4,122.9,119.5],
+[107,140.9,137.4,133.8,130.3,126.9,123.4,120.0],[108,141.5,137.9,134.4,130.9,127.4,123.9,120.5],
+[109,142.1,138.5,135.0,131.4,127.9,124.4,121.0],[110,142.7,139.1,135.5,131.9,128.4,124.9,121.5],
+[111,143.3,139.6,136.0,132.4,129.0,125.4,122.0],[112,143.9,140.2,136.6,133.0,129.5,125.9,122.5],
+[113,144.5,140.8,137.1,133.5,130.0,126.5,123.0],[114,145.1,141.4,137.7,134.0,130.5,127.0,123.6],
+[115,145.7,142.0,138.3,134.6,131.0,127.5,124.1],[116,146.4,142.6,138.9,135.2,131.6,128.0,124.6],
+[117,147.0,143.3,139.5,135.8,132.1,128.5,125.1],[118,147.7,143.9,140.2,136.4,132.7,129.0,125.6],
+[119,148.4,144.6,140.8,137.0,133.3,129.6,126.2],[120,149.1,145.3,141.5,137.7,133.9,130.2,126.7],
+[121,149.8,146.0,142.2,138.4,134.6,130.8,127.3],[122,150.5,146.7,142.9,139.0,135.2,131.4,127.8],
+[123,151.3,147.4,143.6,139.8,135.9,132.1,128.4],[124,152.0,148.2,144.3,140.5,136.6,132.8,129.0],
+[125,152.8,148.9,145.0,141.2,137.3,133.5,129.6],[126,153.6,149.6,145.7,141.9,138.0,134.2,130.3],
+[127,154.3,150.4,146.4,142.5,138.7,134.9,131.0],[128,155.1,151.1,147.1,143.2,139.3,135.5,131.7],
+[129,155.8,151.8,147.8,143.8,139.9,136.1,132.3],[130,156.5,152.5,148.4,144.4,140.5,136.6,132.8],
+[131,157.2,153.1,149.0,145.0,141.0,137.1,133.2],[132,157.9,153.7,149.5,145.5,141.5,137.6,133.7],
+[133,158.5,154.3,150.1,146.0,142.0,138.1,134.2],[134,159.1,154.9,150.6,146.5,142.4,138.5,134.6],
+[135,159.7,155.4,151.1,146.9,142.8,138.9,135.0],[136,160.2,155.9,151.6,147.3,143.2,139.2,135.3],
+[137,160.7,156.3,152.0,147.7,143.5,139.5,135.5],[138,161.1,156.7,152.3,148.0,143.8,139.7,135.7],
+[139,161.5,157.1,152.7,148.4,144.1,140.0,135.9],[140,161.9,157.4,153.0,148.7,144.4,140.2,136.1],
+[141,162.3,157.8,153.3,149.0,144.7,140.4,136.2],[142,162.6,158.1,153.6,149.2,144.9,140.7,136.4],
+[143,162.9,158.4,153.9,149.5,145.2,140.9,136.6],[144,163.2,158.6,154.1,149.7,145.4,141.1,136.8],
+[145,163.4,158.8,154.3,149.9,145.6,141.3,137.0],[146,163.7,159.1,154.5,150.1,145.8,141.5,137.2],
+[147,163.9,159.3,154.8,150.3,146.0,141.7,137.4],[148,164.1,159.5,155.0,150.5,146.1,141.8,137.5],
+[149,164.3,159.6,155.1,150.7,146.3,142.0,137.7],[150,164.5,159.8,155.3,150.8,146.4,142.1,137.8],
+[151,164.6,160.0,155.4,151.0,146.6,142.3,138.0],[152,164.8,160.1,155.6,151.1,146.7,142.4,138.1],
+[153,165.0,160.3,155.7,151.2,146.8,142.5,138.2],[154,165.1,160.4,155.8,151.4,147.0,142.6,138.3],
+[155,165.3,160.5,155.9,151.5,147.1,142.7,138.4],[156,165.4,160.6,156.0,151.6,147.2,142.8,138.5],
+[157,165.5,160.8,156.2,151.7,147.3,142.9,138.6],[158,165.6,160.9,156.3,151.8,147.4,143.0,138.7],
+[159,165.7,161.0,156.4,151.9,147.5,143.1,138.8],[160,165.8,161.1,156.5,152.0,147.6,143.2,138.8],
+[161,165.9,161.2,156.5,152.0,147.6,143.2,138.9],[162,166.0,161.3,156.6,152.1,147.7,143.3,138.9],
+[163,166.1,161.3,156.7,152.2,147.7,143.3,139.0],[164,166.1,161.4,156.7,152.2,147.8,143.4,139.0],
+[165,166.2,161.5,156.8,152.3,147.8,143.4,139.1],[166,166.2,161.5,156.8,152.3,147.9,143.5,139.1],
+[167,166.3,161.5,156.9,152.3,147.9,143.5,139.2],[168,166.3,161.6,156.9,152.4,147.9,143.5,139.2],
+[169,166.3,161.6,156.9,152.4,148.0,143.6,139.2],[170,166.4,161.7,157.0,152.4,148.0,143.6,139.3],
+[171,166.4,161.7,157.0,152.5,148.0,143.6,139.3],[172,166.4,161.7,157.0,152.5,148.0,143.7,139.3],
+[173,166.4,161.7,157.1,152.5,148.1,143.7,139.3],[174,166.5,161.7,157.1,152.5,148.1,143.7,139.4],
+[175,166.5,161.8,157.1,152.5,148.1,143.7,139.4],[176,166.5,161.8,157.1,152.6,148.1,143.7,139.4],
+[177,166.5,161.8,157.1,152.6,148.1,143.8,139.4],[178,166.5,161.8,157.2,152.6,148.1,143.8,139.4],
+[179,166.5,161.8,157.2,152.6,148.2,143.8,139.5],[180,166.5,161.8,157.2,152.6,148.2,143.8,139.5],
+[181,166.5,161.8,157.2,152.6,148.2,143.8,139.5],[182,166.6,161.9,157.2,152.6,148.2,143.8,139.5],
+[183,166.6,161.9,157.2,152.7,148.2,143.8,139.5],[184,166.6,161.9,157.2,152.7,148.2,143.8,139.5],
+[185,166.6,161.9,157.2,152.7,148.2,143.9,139.5],[186,166.6,161.9,157.3,152.7,148.2,143.9,139.5],
+[187,166.6,161.9,157.3,152.7,148.2,143.9,139.5],[188,166.6,161.9,157.3,152.7,148.2,143.9,139.5],
+[189,166.6,161.9,157.3,152.7,148.3,143.9,139.5],[190,166.6,161.9,157.3,152.7,148.3,143.9,139.5],
+[191,166.6,162.0,157.3,152.7,148.3,143.9,139.5],[192,166.6,162.0,157.3,152.7,148.3,143.9,139.5],
+[193,166.6,162.0,157.3,152.7,148.3,143.9,139.5],[194,166.6,162.0,157.3,152.8,148.3,143.9,139.6],
+[195,166.7,162.0,157.3,152.8,148.3,143.9,139.6],[196,166.7,162.0,157.3,152.8,148.3,143.9,139.6],
+[197,166.7,162.0,157.4,152.8,148.3,143.9,139.6],[198,166.7,162.0,157.4,152.8,148.3,143.9,139.6],
+[199,166.7,162.0,157.4,152.8,148.3,143.9,139.6],[200,166.7,162.0,157.4,152.8,148.3,143.9,139.6],
+[201,166.7,162.0,157.4,152.8,148.3,143.9,139.6],[202,166.7,162.0,157.4,152.8,148.3,143.9,139.6],
+[203,166.7,162.0,157.4,152.8,148.3,143.9,139.6],[204,166.7,162.0,157.4,152.8,148.3,143.9,139.6],
+[205,166.7,162.0,157.4,152.8,148.3,143.9,139.6],[206,166.7,162.0,157.4,152.8,148.3,143.9,139.6],
+[207,166.7,162.0,157.4,152.8,148.3,143.9,139.6],[208,166.7,162.0,157.4,152.8,148.3,143.9,139.6],
+[209,166.7,162.0,157.4,152.8,148.3,143.9,139.6],[210,166.7,162.0,157.4,152.8,148.3,144.0,139.6],
+[211,166.7,162.0,157.4,152.8,148.3,144.0,139.6],[212,166.7,162.0,157.4,152.8,148.3,144.0,139.6],
+[213,166.7,162.0,157.4,152.8,148.3,144.0,139.6],[214,166.7,162.0,157.4,152.8,148.4,144.0,139.6],
+[215,166.7,162.0,157.4,152.8,148.4,144.0,139.6],[216,166.7,162.0,157.4,152.8,148.4,144.0,139.6],
+[217,166.7,162.0,157.4,152.8,148.4,144.0,139.6],[218,166.7,162.0,157.4,152.8,148.4,144.0,139.6],
+[219,166.7,162.0,157.4,152.8,148.4,144.0,139.6],[220,166.7,162.0,157.4,152.8,148.4,144.0,139.6],
+[221,166.7,162.0,157.4,152.8,148.4,144.0,139.6],[222,166.7,162.0,157.4,152.8,148.4,144.0,139.6],
+[223,166.7,162.0,157.4,152.8,148.4,144.0,139.6],[224,166.7,162.0,157.4,152.8,148.4,144.0,139.6],
+[225,166.7,162.0,157.4,152.8,148.4,144.0,139.6],[226,166.7,162.0,157.4,152.8,148.4,144.0,139.6],
+[227,166.7,162.0,157.4,152.8,148.4,144.0,139.6],[228,166.7,162.0,157.4,152.9,148.4,144.0,139.6],
+];
+
+const MONTHS = RAW.map(r=>r[0]);
+const Z = {
+  p3:  RAW.map(r=>({x:r[0],y:r[1]})),
+  p2:  RAW.map(r=>({x:r[0],y:r[2]})),
+  p1:  RAW.map(r=>({x:r[0],y:r[3]})),
+  z0:  RAW.map(r=>({x:r[0],y:r[4]})),
+  m1:  RAW.map(r=>({x:r[0],y:r[5]})),
+  m2:  RAW.map(r=>({x:r[0],y:r[6]})),
+  m3:  RAW.map(r=>({x:r[0],y:r[7]})),
+};
+
+// Cores fiéis ao original OMS
+const LINE_COLORS = {
+  p3: '#1a1a1a',   // preto
+  p2: '#cc2200',   // vermelho escuro
+  p1: '#e08000',   // laranja
+  z0: '#2e8b00',   // verde
+  m1: '#e08000',   // laranja
+  m2: '#cc2200',   // vermelho
+  m3: '#1a1a1a',   // preto
+};
+
+function interpolate(key, ageM) {
+  const idx = RAW.findIndex(r => r[0] === ageM);
+  if (idx !== -1) {
+    const col = {p3:1,p2:2,p1:3,z0:4,m1:5,m2:6,m3:7}[key];
+    return RAW[idx][col];
+  }
+  const lo = RAW.filter(r => r[0] < ageM).pop();
+  const hi = RAW.find(r => r[0] > ageM);
+  if (!lo || !hi) return null;
+  const col = {p3:1,p2:2,p1:3,z0:4,m1:5,m2:6,m3:7}[key];
+  const frac = (ageM - lo[0]) / (hi[0] - lo[0]);
+  return lo[col] + frac * (hi[col] - lo[col]);
+}
+
+function calcZ(ageM, ht) {
+  const z0  = interpolate('z0', ageM);
+  const zp1 = interpolate('p1', ageM);
+  const zm1 = interpolate('m1', ageM);
+  if (z0 === null) return null;
+  if (ht >= z0) {
+    const sd = zp1 - z0; if (sd <= 0) return null;
+    return ((ht - z0) / sd).toFixed(2);
+  } else {
+    const sd = z0 - zm1; if (sd <= 0) return null;
+    return (-(z0 - ht) / sd).toFixed(2);
+  }
+}
+
+// Plugin customizado para labels Z no lado direito
+const zLabelPlugin = {
+  id: 'zLabels',
+  afterDraw(chart) {
+    const ctx = chart.ctx;
+    const xAxis = chart.scales.x;
+    const yAxis = chart.scales.y;
+
+    // Pega a posição X do último mês (228)
+    const xPos = xAxis.getPixelForValue(228) + 6;
+
+    const labels = [
+      { key: 'p3', text: '3',  color: '#1a1a1a' },
+      { key: 'p2', text: '2',  color: '#cc2200' },
+      { key: 'p1', text: '1',  color: '#e08000' },
+      { key: 'z0', text: '0',  color: '#2e8b00' },
+      { key: 'm1', text: '-1', color: '#e08000' },
+      { key: 'm2', text: '-2', color: '#cc2200' },
+      { key: 'm3', text: '-3', color: '#1a1a1a' },
+    ];
+
+    labels.forEach(l => {
+      const lastVal = Z[l.key][Z[l.key].length - 1].y;
+      const yPos = yAxis.getPixelForValue(lastVal);
+      ctx.save();
+      ctx.font = 'bold 11px Arial';
+      ctx.fillStyle = l.color;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(l.text, xPos, yPos);
+      ctx.restore();
+    });
+  }
+};
+
+// Desenhar fundo do gráfico como o OMS (borda magenta espessa)
+const bgPlugin = {
+  id: 'bgPlugin',
+  beforeDraw(chart) {
+    const ctx = chart.ctx;
+    const {left, top, right, bottom, width, height} = chart.chartArea;
+    // fundo branco da área
+    ctx.save();
+    ctx.fillStyle = 'white';
+    ctx.fillRect(left, top, width, height);
+    ctx.restore();
+  }
+};
+
+// Meses que marcam cada ano (3, 6, 9 dentro de cada ano)
+function buildXTicks() {
+  // Eixo: de 61 a 228 meses
+  // Linhas verticais em cada mês inteiro
+  return null;
+}
+
+const cfg = {
+  type: 'scatter',
+  data: {
+    datasets: [
+      mkLine('p3', 'Z +3', LINE_COLORS.p3, 2),
+      mkLine('p2', 'Z +2', LINE_COLORS.p2, 1.8),
+      mkLine('p1', 'Z +1', LINE_COLORS.p1, 1.8),
+      mkLine('z0', 'Z  0', LINE_COLORS.z0, 2.2),
+      mkLine('m1', 'Z -1', LINE_COLORS.m1, 1.8),
+      mkLine('m2', 'Z -2', LINE_COLORS.m2, 1.8),
+      mkLine('m3', 'Z -3', LINE_COLORS.m3, 2),
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    layout: { padding: { right: 28, top: 4, bottom: 2, left: 2 } },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label(ctx) {
+            if (ctx.dataset._pt) {
+              const n = ctx.dataset._name || '';
+              const mo = ctx.parsed.x;
+              const yr = Math.floor(mo/12);
+              const m  = mo % 12;
+              return `${n}: ${ctx.parsed.y} cm (${yr}a ${m}m)`;
+            }
+            return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} cm`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        min: 61,
+        max: 228,
+        border: { color: '#555' },
+        grid: {
+          color: (ctx) => {
+            const v = ctx.tick.value;
+            // linha mais forte a cada ano (múltiplo de 12 a partir de 60)
+            if ((v - 60) % 12 === 0) return 'rgba(0,0,0,0.25)';
+            return 'rgba(0,0,0,0.10)';
+          },
+          lineWidth: (ctx) => {
+            const v = ctx.tick.value;
+            if ((v - 60) % 12 === 0) return 1.2;
+            return 0.7;
+          },
+          drawTicks: false,
+        },
+        ticks: {
+          font: { size: 10, family: 'Arial' },
+          color: '#333',
+          maxRotation: 0,
+          // Mostrar: "3 6 9" para meses, e o número do ano embaixo
+          callback(val) {
+            const offset = val - 60; // meses desde 5 anos
+            if (offset % 12 === 3) return '3';
+            if (offset % 12 === 6) return '6';
+            if (offset % 12 === 9) return '9';
+            if (offset % 12 === 0 && val > 60) return '';
+            return '';
+          },
+          stepSize: 3,
+          autoSkip: false,
+        },
+        afterTickToLabelConversion(axis) {
+          // Adiciona labels de anos manualmente
+        },
+        title: {
+          display: true,
+          text: 'Age (completed months and years)',
+          font: { size: 12, family: 'Arial' },
+          color: '#222',
+          padding: { top: 22 }
+        }
+      },
+      y: {
+        min: 85,
+        max: 195,
+        border: { color: '#555' },
+        grid: {
+          color: (ctx) => {
+            if (ctx.tick.value % 10 === 0) return 'rgba(0,0,0,0.25)';
+            return 'rgba(0,0,0,0.10)';
+          },
+          lineWidth: (ctx) => ctx.tick.value % 10 === 0 ? 1.2 : 0.7,
+          drawTicks: false,
+        },
+        ticks: {
+          font: { size: 10, family: 'Arial' },
+          color: '#333',
+          stepSize: 2,
+          callback(v) { return Number.isInteger(v) && v % 10 === 0 ? v : ''; }
+        },
+        title: {
+          display: true,
+          text: 'Height (cm)',
+          font: { size: 12, family: 'Arial' },
+          color: '#222',
+        }
+      }
+    }
+  },
+  plugins: [zLabelPlugin, bgPlugin,
+    // Plugin para labels de ano no eixo X (segunda linha)
+    {
+      id: 'yearLabels',
+      afterDraw(chart) {
+        const ctx = chart.ctx;
+        const xAxis = chart.scales.x;
+        const yAxis = chart.scales.y;
+        const bottom = yAxis.bottom;
+
+        ctx.save();
+        ctx.font = '11px Arial';
+        ctx.fillStyle = '#222';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        // "Months" e "Years" labels à esquerda
+        const leftX = xAxis.left - 2;
+        ctx.textAlign = 'right';
+        ctx.font = 'bold 9px Arial';
+        ctx.fillText('Months', leftX, bottom + 4);
+        ctx.fillText('Years', leftX, bottom + 16);
+
+        // Anos: 5 a 19
+        ctx.font = '11px Arial';
+        ctx.textAlign = 'center';
+        for (let yr = 5; yr <= 19; yr++) {
+          const mo = yr * 12;
+          if (mo < 61 || mo > 228) continue;
+          const xPos = xAxis.getPixelForValue(mo);
+          ctx.fillText(String(yr), xPos, bottom + 16);
+        }
+
+        // "90" no canto inferior esquerdo (valor do eixo Y mínimo)
+        ctx.textAlign = 'right';
+        ctx.font = '10px Arial';
+        const y90 = yAxis.getPixelForValue(90);
+        ctx.fillText('90', xAxis.left - 4, y90 - 5);
+
+        ctx.restore();
+      }
+    },
+    // Faixa hachurada de altura alvo — segue a curvatura da Z0
+    {
+      id: 'targetBand',
+      afterDraw(chart) {
+        if (!window._targetHt) return;
+        const ctx   = chart.ctx;
+        const xAxis = chart.scales.x;
+        const yAxis = chart.scales.y;
+        const target = window._targetHt;
+        const margin = 5;
+
+        // A faixa é a curva Z0 deslocada verticalmente pelo offset
+        // offset = target - Z0_final (valor de Z0 no último mês)
+        // Para cada mês, curva_alvo[i] = Z0[i] + offset
+        // Isso faz a faixa seguir exatamente a curvatura da mediana
+
+        // Calcula o offset: queremos que a curva central passe por `target`
+        // na idade adulta (último valor de Z0 = Z0 em 228 meses = 152.8)
+        // Mas é mais natural: offset = target - Z0_adulto
+        const Z0_adulto = 152.8; // valor Z0 aos 19 anos
+        const offset = target - Z0_adulto;
+
+        // Gera pontos para as três curvas (alvo+5, alvo, alvo-5)
+        // usando Z0 como base + offset ± margin
+        function getCurvePoints(delta) {
+          return RAW.map(r => ({
+            x: xAxis.getPixelForValue(r[0]),
+            y: yAxis.getPixelForValue(r[4] + offset + delta)  // r[4] = Z0
+          }));
+        }
+
+        const ptsMid  = getCurvePoints(0);
+        const ptsTop  = getCurvePoints(margin);
+        const ptsBot  = getCurvePoints(-margin);
+
+        // Clip à área do gráfico
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(xAxis.left, yAxis.top, xAxis.right - xAxis.left, yAxis.bottom - yAxis.top);
+        ctx.clip();
+
+        // ── Desenha a faixa preenchida (caminho fechado: top → bottom reverso) ──
+        ctx.beginPath();
+        ptsTop.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+        for (let i = ptsBot.length - 1; i >= 0; i--) ctx.lineTo(ptsBot[i].x, ptsBot[i].y);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(123, 45, 139, 0.08)';
+        ctx.fill();
+
+        // ── Hachura diagonal dentro da faixa ──
+        // Criamos um clip path da faixa e desenhamos linhas diagonais dentro
+        ctx.save();
+        ctx.beginPath();
+        ptsTop.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+        for (let i = ptsBot.length - 1; i >= 0; i--) ctx.lineTo(ptsBot[i].x, ptsBot[i].y);
+        ctx.closePath();
+        ctx.clip();
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(123, 45, 139, 0.22)';
+        ctx.lineWidth = 0.8;
+        const xL = xAxis.left, xR = xAxis.right;
+        const yT = yAxis.top,  yB = yAxis.bottom;
+        const span = (xR - xL) + (yB - yT);
+        const step = 7;
+        for (let s = -span; s < span * 2; s += step) {
+          ctx.moveTo(xL + s,       yT);
+          ctx.lineTo(xL + s + (yB - yT), yB);
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        // ── Bordas da faixa (curvas superior e inferior) ──
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(123, 45, 139, 0.40)';
+        ctx.lineWidth = 1;
+        ptsTop.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+        ctx.stroke();
+
+        ctx.beginPath();
+        ptsBot.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+        ctx.stroke();
+
+        // ── Linha central tracejada ──
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(123, 45, 139, 0.80)';
+        ctx.lineWidth = 1.8;
+        ctx.setLineDash([6, 4]);
+        ptsMid.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.restore();  // remove clip da área do gráfico
+
+        // ── Labels no lado direito ──
+        const lx = xAxis.right + 3;
+        const lastTop = ptsTop[ptsTop.length - 1];
+        const lastMid = ptsMid[ptsMid.length - 1];
+        const lastBot = ptsBot[ptsBot.length - 1];
+
+        ctx.save();
+        ctx.font = 'bold 10px Arial';
+        ctx.fillStyle = 'rgba(123, 45, 139, 0.9)';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${(target + margin).toFixed(0)}`, lx, lastTop.y);
+        ctx.fillText(`${target.toFixed(1)}`,             lx, lastMid.y);
+        ctx.fillText(`${(target - margin).toFixed(0)}`, lx, lastBot.y);
+
+        // Label "Alvo" junto à linha central no início
+        ctx.font = '9px Arial';
+        ctx.fillStyle = 'rgba(123, 45, 139, 0.75)';
+        ctx.textAlign = 'left';
+        const firstMid = ptsMid[0];
+        ctx.fillText('Alvo', firstMid.x + 4, firstMid.y - 9);
+        ctx.restore();
+      }
+    },
+    // Borda magenta ao redor da área do gráfico
+    {
+      id: 'pinkBorder',
+      beforeDraw(chart) {
+        const ctx = chart.ctx;
+        const {left, top, right, bottom, width, height} = chart.chartArea;
+        const pad = 12;
+        ctx.save();
+        ctx.fillStyle = '#d93bb5';
+        // top bar
+        ctx.fillRect(left - pad, top - pad, width + pad*2, pad);
+        // bottom bar
+        ctx.fillRect(left - pad, bottom, width + pad*2, pad);
+        // left bar
+        ctx.fillRect(left - pad, top - pad, pad, height + pad*2);
+        // right bar
+        ctx.fillRect(right, top - pad, pad + 28, height + pad*2);
+        ctx.restore();
+      }
+    }
+  ]
+};
+
+function mkLine(key, label, color, lw) {
+  return {
+    label,
+    data: Z[key],
+    borderColor: color,
+    borderWidth: lw,
+    pointRadius: 0,
+    showLine: true,
+    tension: 0.4,
+    fill: false,
+    _key: key,
+  };
+}
+
+// Cria o gráfico
+const canvas = document.getElementById('whoChart');
+canvas.height = 560;
+const chart = new Chart(canvas, cfg);
+
+// ── LÓGICA DE PONTOS ──
+
+// Pré-preenche a data da consulta com hoje
+(function() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm   = String(today.getMonth() + 1).padStart(2, '0');
+  const dd   = String(today.getDate()).padStart(2, '0');
+  document.getElementById('refdate').value = `${yyyy}-${mm}-${dd}`;
+})();
+
+function calcAgeMonths(dobStr, refStr) {
+  const ref = refStr ? new Date(refStr) : new Date();
+  const b   = new Date(dobStr);
+  let m = (ref.getFullYear() - b.getFullYear()) * 12 + (ref.getMonth() - b.getMonth());
+  if (ref.getDate() < b.getDate()) m--;
+  return m;
+}
+
+// Paleta de cores por paciente (mesma cor em todas as medições dela)
+const PATIENT_COLORS = [
+  '#1565C0','#6A1B9A','#00695C','#BF360C',
+  '#AD1457','#37474F','#4527A0','#00695C'
+];
+
+// patients: { [key]: { color, dobStr, datasetIdx } }
+// points: array de medições individuais
+let patients = {};
+let patientOrder = [];
+let points = [];
+
+function getPatientColor(key) {
+  if (!patients[key]) {
+    const color = PATIENT_COLORS[patientOrder.length % PATIENT_COLORS.length];
+    patients[key] = { color, datasetIdx: null };
+    patientOrder.push(key);
+  }
+  return patients[key].color;
+}
+
+function addPoint() {
+  const refV    = document.getElementById('refdate').value;
+  const dobV    = document.getElementById('dob').value;
+  const htV     = parseFloat(document.getElementById('ht').value);
+  const lblV    = document.getElementById('lbl').value.trim() || 'Paciente';
+  const boneRaw = document.getElementById('boneage').value;
+  const boneV   = boneRaw !== '' ? parseFloat(boneRaw) : null;
+  const matV    = document.getElementById('maturation').value;
+  const err     = document.getElementById('error-msg');
+  err.textContent = '';
+
+  if (!refV) { err.textContent = 'Informe a data da consulta.'; return; }
+  if (!dobV) { err.textContent = 'Informe a data de nascimento.'; return; }
+  if (isNaN(htV) || htV < 60 || htV > 200) { err.textContent = 'Altura inválida (60–200 cm).'; return; }
+  if (boneV !== null && (isNaN(boneV) || boneV < 1 || boneV > 19)) {
+    err.textContent = 'Idade óssea inválida (1–19 anos).'; return;
+  }
+
+  const ageM = calcAgeMonths(dobV, refV);
+  if (ageM < 60 || ageM > 228) {
+    err.textContent = `Idade fora do intervalo 5–19 anos (calculada: ${(ageM/12).toFixed(1)} anos).`;
+    return;
+  }
+
+  const boneM = boneV !== null ? Math.round(boneV * 12) : null;
+  const color  = getPatientColor(lblV);
+  const zScore = calcZ(ageM, htV);
+  const zBone  = boneM !== null ? calcZ(boneM, htV) : null;
+  const bpPred = (boneV !== null) ? calcBP(htV, boneV, matV) : null;
+  const pt     = { id: Date.now(), label: lblV, dob: dobV, ref: refV, ageM, ht: htV, color,
+                   z: zScore, boneM, boneV, zBone, mat: matV, bp: bpPred };
+  points.push(pt);
+
+  rebuildPointDatasets();
+  renderTable();
+  markUnsaved();
+
+  document.getElementById('ht').value = '';
+  document.getElementById('boneage').value = '';
+  updateBP();
+  document.getElementById('ht').focus();
+}
+
+function rebuildPointDatasets() {
+  chart.data.datasets.splice(7);
+
+  const byPatient = {};
+  points.forEach(p => {
+    if (!byPatient[p.label]) byPatient[p.label] = [];
+    byPatient[p.label].push(p);
+  });
+
+  patientOrder.forEach(key => {
+    if (!byPatient[key]) return;
+    const pts   = byPatient[key].slice().sort((a,b) => a.ageM - b.ageM);
+    const color = patients[key].color;
+
+    // ── Dataset 1: idade cronológica — bolinhas, com linha de conexão
+    chart.data.datasets.push({
+      label: key + ' (IC)',
+      _pt: true, _name: key,
+      data: pts.map(p => ({ x: p.ageM, y: p.ht })),
+      borderColor: color,
+      borderWidth: pts.length > 1 ? 1.5 : 0,
+      borderDash: [4, 3],
+      pointBackgroundColor: color,
+      pointBorderColor: 'white',
+      pointBorderWidth: 2,
+      pointRadius: 7,
+      pointHoverRadius: 9,
+      pointStyle: 'circle',
+      showLine: true,
+      tension: 0,
+      fill: false,
+      type: 'scatter',
+    });
+
+    // ── Dataset 2: idade óssea — X, apenas pontos que têm idade óssea
+    const bonePts = pts.filter(p => p.boneM !== null);
+    if (bonePts.length > 0) {
+      chart.data.datasets.push({
+        label: key + ' (IO)',
+        _pt: true, _name: key + ' (IO)',
+        data: bonePts.map(p => ({ x: p.boneM, y: p.ht })),
+        borderColor: color,
+        borderWidth: bonePts.length > 1 ? 1.5 : 0,
+        borderDash: [2, 4],
+        pointBackgroundColor: 'white',
+        pointBorderColor: color,
+        pointBorderWidth: 2.5,
+        pointRadius: 8,
+        pointHoverRadius: 10,
+        pointStyle: 'crossRot',   // X aberto
+        showLine: true,
+        tension: 0,
+        fill: false,
+        type: 'scatter',
+      });
+    }
+  });
+
+  chart.update();
+
+  // Mostra legenda de símbolos se houver algum ponto com idade óssea
+  const hasAnyBone = points.some(p => p.boneM !== null);
+  const leg = document.getElementById('symbolLegend');
+  if (leg) leg.style.display = hasAnyBone ? 'flex' : 'none';
+}
+
+function removePoint(id) {
+  const idx = points.findIndex(p => p.id === id);
+  if (idx === -1) return;
+  const removed = points[idx];
+  points.splice(idx, 1);
+
+  // Se era o último ponto dessa paciente, remove ela da lista
+  const remaining = points.filter(p => p.label === removed.label);
+  if (remaining.length === 0) {
+    delete patients[removed.label];
+    patientOrder = patientOrder.filter(k => k !== removed.label);
+  }
+
+  rebuildPointDatasets();
+  renderTable();
+  markUnsaved();
+}
+
+function clearAll() {
+  points = [];
+  patients = {};
+  patientOrder = [];
+  chart.data.datasets.splice(7);
+  chart.update();
+  renderTable();
+  markUnsaved();
+}
+
+function formatDate(dateStr) {
+  const [y,m,d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function renderTable() {
+  const sec   = document.getElementById('ptsList');
+  const tbody = document.getElementById('ptsTbody');
+  tbody.innerHTML = '';
+  if (points.length === 0) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+
+  // Agrupa por paciente para exibição
+  const byPatient = {};
+  points.forEach(p => {
+    if (!byPatient[p.label]) byPatient[p.label] = [];
+    byPatient[p.label].push(p);
+  });
+
+  patientOrder.forEach(key => {
+    if (!byPatient[key]) return;
+    const pts = byPatient[key].slice().sort((a,b) => a.ageM - b.ageM);
+    pts.forEach((p, i) => {
+      const yr    = Math.floor(p.ageM / 12);
+      const mo    = p.ageM % 12;
+      const zStr  = p.z     !== null ? p.z     : '—';
+      const zBStr = p.zBone !== null ? p.zBone : '—';
+      const boStr = p.boneV !== null ? p.boneV.toFixed(1) + ' anos' : '—';
+      const matStr = p.boneV !== null ? (p.mat === 'atrasada' ? 'Atrasada' : p.mat === 'avancada' ? 'Avançada' : 'Normal') : '—';
+      const bpStr = p.bp !== null ? `<strong>${p.bp.toFixed(1)} cm</strong>` : '—';
+      const tr    = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${i === 0 ? `<span class="dot-preview" style="background:${p.color}"></span><strong>${p.label}</strong>` : ''}</td>
+        <td>${formatDate(p.ref)}</td>
+        <td>${formatDate(p.dob)}</td>
+        <td>${yr}a ${mo}m</td>
+        <td>${boStr}</td>
+        <td>${matStr}</td>
+        <td>${p.ht.toFixed(1)} cm</td>
+        <td>${zStr}</td>
+        <td>${zBStr}</td>
+        <td>${bpStr}</td>
+        <td class="no-print"><button class="btn-del" onclick="removePoint(${p.id})" title="Remover">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+// ── TABELA BAYLEY-PINNEAU ──
+// Formato: { io: [atrasada_col1, normal_col1, avancada_col1, atrasada_col2, normal_col2, avancada_col2] }
+// col1 = colunas da esquerda (estatura parcial); col2 = colunas da direita
+// Fonte: tabelas originais BP para meninas
+// A tabela original tem dois blocos de colunas. Usamos col1 quando disponível, col2 como alternativa.
+// Regra: se col1 disponível usa col1, senão col2. Se só col2, usa col2.
+// io em décimos de ano (ex: 6.0, 6.3, ...)
+const BP_TABLE = {
+  // io: [at1, no1, av1, at2, no2, av2]  (null = célula vazia na tabela original)
+   6.0: [0.733, 0.720, null,  0.680, null,  null ],
+   6.3: [0.742, 0.729, null,  0.690, null,  null ],
+   6.6: [0.751, 0.738, null,  0.700, null,  null ],
+   6.9: [0.763, 0.751, null,  0.709, null,  null ],
+   7.0: [0.770, 0.757, 0.722, 0.718, 0.695, 0.670],
+   7.3: [0.779, 0.765, 0.732, 0.728, 0.702, 0.676],
+   7.6: [0.788, 0.772, 0.742, 0.738, 0.709, 0.683],
+   7.9: [0.797, 0.782, 0.750, 0.747, 0.716, 0.689],
+   8.0: [0.804, 0.790, 0.760, 0.756, 0.723, 0.696],
+   8.3: [0.813, 0.801, 0.771, 0.765, 0.731, 0.703],
+   8.6: [0.823, 0.810, 0.784, 0.773, 0.739, 0.709],
+   8.9: [0.836, 0.821, 0.790, 0.779, 0.746, 0.715],
+   9.0: [0.841, 0.827, 0.800, 0.786, 0.752, 0.720],
+   9.3: [0.851, 0.836, 0.809, 0.794, 0.761, 0.728],
+   9.6: [0.858, 0.844, 0.819, 0.800, 0.769, 0.734],
+   9.9: [0.866, 0.853, 0.828, 0.807, 0.777, 0.741],
+  10.0: [0.874, 0.862, 0.841, 0.812, 0.784, 0.747],
+  10.3: [0.884, 0.874, 0.856, 0.816, 0.791, 0.753],
+  10.6: [0.896, 0.884, 0.870, 0.819, 0.795, 0.758],
+  10.9: [0.907, 0.896, 0.883, 0.821, 0.800, 0.763],
+  11.0: [0.918, 0.906, 0.887, 0.823, 0.804, 0.767],
+  11.3: [0.922, 0.910, 0.891, 0.827, 0.812, 0.776],
+  11.6: [0.926, 0.914, 0.897, 0.838, 0.818, 0.786],
+  11.9: [0.929, 0.918, 0.901, 0.839, 0.827, 0.800],
+  12.0: [0.932, 0.922, 0.913, 0.845, 0.834, 0.809],
+  12.3: [0.942, 0.932, 0.924, 0.852, 0.843, 0.818],
+  12.6: [0.949, 0.941, 0.935, 0.860, 0.853, 0.828],
+  12.9: [0.957, 0.950, 0.945, 0.869, 0.863, 0.839],
+  13.0: [0.964, 0.958, 0.955, 0.880, 0.876, 0.850],
+  13.3: [0.971, 0.967, 0.963, null,  0.890, 0.863],
+  13.6: [0.977, 0.974, 0.968, null,  0.902, 0.875],
+  13.9: [0.981, 0.978, 0.972, null,  0.914, 0.890],
+  14.0: [0.983, 0.980, 0.977, null,  0.927, 0.905],
+  14.3: [0.986, 0.983, 0.980, null,  0.938, 0.918],
+  14.6: [0.989, 0.986, 0.983, null,  0.948, 0.930],
+  14.9: [0.992, 0.988, 0.986, null,  0.958, 0.943],
+  15.0: [0.994, 0.990, 0.988, null,  0.968, 0.958],
+  15.3: [0.995, 0.991, 0.990, null,  0.973, 0.967],
+  15.6: [0.996, 0.993, 0.992, null,  0.976, 0.971],
+  15.9: [0.997, 0.994, 0.993, null,  0.980, 0.976],
+  16.0: [0.998, 0.996, 0.994, null,  0.982, 0.980],
+  16.3: [0.999, 0.996, 0.995, null,  0.985, 0.983],
+  16.6: [0.999, 0.997, 0.997, null,  0.987, 0.985],
+  16.9: [0.9995,0.998, 0.998, null,  0.989, 0.988],
+  17.0: [1.000, 0.999, 0.999, null,  0.991, 0.990],
+  17.3: [null,  null,  null,  null,  0.993, null ],
+  17.6: [null,  0.9995,0.9995,null,  0.994, null ],
+  17.9: [null,  null,  null,  null,  0.995, null ],
+  18.0: [null,  1.000, null,  null,  0.996, null ],
+  18.3: [null,  null,  null,  null,  0.998, null ],
+  18.6: [null,  null,  null,  null,  1.000, null ],
+};
+
+// Retorna fator BP interpolado para uma dada idade óssea e maturação
+// Tenta col1 primeiro; se nula, usa col2
+function getBPFactor(ioAnos, mat) {
+  const colIdx = { atrasada: 0, normal: 1, avancada: 2 }[mat] ?? 1;
+
+  // Encontra as duas chaves mais próximas para interpolação
+  const keys = Object.keys(BP_TABLE).map(Number).sort((a,b)=>a-b);
+  const io = Math.round(ioAnos * 10) / 10; // arredonda para 1 decimal
+
+  // Procura chave exata primeiro
+  let loKey = null, hiKey = null;
+  for (let i = 0; i < keys.length; i++) {
+    if (Math.abs(keys[i] - io) < 0.001) {
+      // chave exata
+      const row = BP_TABLE[keys[i]];
+      const v1 = row[colIdx];
+      const v2 = row[colIdx + 3];
+      const v = v1 !== null ? v1 : (v2 !== null ? v2 : null);
+      return v;
+    }
+    if (keys[i] < io) loKey = keys[i];
+    if (keys[i] > io && hiKey === null) hiKey = keys[i];
+  }
+
+  // Interpolação linear entre loKey e hiKey
+  if (loKey === null || hiKey === null) return null;
+
+  function getVal(k) {
+    const row = BP_TABLE[k];
+    const v1 = row[colIdx];
+    const v2 = row[colIdx + 3];
+    return v1 !== null ? v1 : (v2 !== null ? v2 : null);
+  }
+
+  const vLo = getVal(loKey);
+  const vHi = getVal(hiKey);
+  if (vLo === null || vHi === null) return vLo !== null ? vLo : vHi;
+
+  const frac = (io - loKey) / (hiKey - loKey);
+  return vLo + frac * (vHi - vLo);
+}
+
+function calcBP(alturaAtual, ioAnos, mat) {
+  const fator = getBPFactor(ioAnos, mat);
+  if (fator === null || fator === 0) return null;
+  return alturaAtual / fator;
+}
+
+// Atualiza a caixa de previsão em tempo real conforme o usuário digita
+function updateBP() {
+  const htRaw   = document.getElementById('ht').value;
+  const boRaw   = document.getElementById('boneage').value;
+  const mat     = document.getElementById('maturation').value;
+  const box     = document.getElementById('bpResult');
+  if (!box) return;
+
+  const ht  = parseFloat(htRaw);
+  const bio = parseFloat(boRaw);
+
+  if (isNaN(ht) || isNaN(bio) || ht < 60 || bio < 1 || bio > 19) {
+    box.className = 'bp-result empty';
+    box.innerHTML = 'preencha altura e I.O.';
+    return;
+  }
+
+  const pred = calcBP(ht, bio, mat);
+  if (pred === null) {
+    box.className = 'bp-result empty';
+    box.innerHTML = 'fator não disponível para esta I.O.';
+    return;
+  }
+
+  const matLabel = mat === 'atrasada' ? 'atrasada' : mat === 'avancada' ? 'avançada' : 'normal';
+  box.className = 'bp-result';
+  box.innerHTML = `<strong>${pred.toFixed(1)} cm</strong><br><span style="font-size:11px;color:#4a7a4a">(maturação ${matLabel})</span>`;
+}
+
+// ══════════════════════════════════════════════
+// PERSISTÊNCIA — Google Drive + localStorage fallback
+// ══════════════════════════════════════════════
+
+const CLIENT_ID   = '182415914086-fmpb9lsdb0gicdhg6s1igf9ooancn960.apps.googleusercontent.com';
+const SCOPES      = 'https://www.googleapis.com/auth/drive.appdata';
+const DB_FILENAME = 'curva_meninas_db.json';
+const DB_KEY      = 'curvaGirls_db';   // fallback localStorage
+
+let _currentKey = null;
+let _unsaved    = false;
+let _driveToken = null;
+let _driveFileId = null;
+let _driveDB    = {};   // cache em memória do banco do Drive
+
+// ── localStorage fallback ──
+function loadDB()      { try { return JSON.parse(localStorage.getItem(DB_KEY) || '{}'); } catch(e) { return {}; } }
+function saveDB(db)    { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function activeDB()    { return _driveToken ? _driveDB : loadDB(); }
+
+// ── UI helpers ──
+function markUnsaved() {
+  _unsaved = true;
+  const u = document.getElementById('unsavedBadge');
+  if (u) u.style.display = _currentKey ? 'inline' : 'none';
+}
+function flashSaved() {
+  _unsaved = false;
+  const s = document.getElementById('savedBadge');
+  const u = document.getElementById('unsavedBadge');
+  if (u) u.style.display = 'none';
+  if (s) { s.style.display = 'inline'; clearTimeout(s._t); s._t = setTimeout(() => s.style.display = 'none', 2500); }
+}
+function setDriveStatus(msg, cls) {
+  const el = document.getElementById('driveStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'drive-status ' + (cls || '');
+}
+
+// ══════════════════════════════════════════════
+// GOOGLE DRIVE — OAuth2 (implicit flow via GIS)
+// ══════════════════════════════════════════════
+
+let _tokenClient = null;
+
+function initGoogleDrive() {
+  if (typeof google === 'undefined') {
+    setTimeout(initGoogleDrive, 500);
+    return;
+  }
+  _tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (resp) => {
+      if (resp.error) { setDriveStatus('erro de autenticação', 'error'); return; }
+      _driveToken = resp.access_token;
+      document.getElementById('btnDriveLogin').textContent = '✓ Drive conectado';
+      document.getElementById('btnDriveLogin').disabled = true;
+      setDriveStatus('conectando...', '');
+      await driveLoadDB();
+    }
+  });
+}
+
+function driveSignIn() {
+  if (!_tokenClient) { alert('API Google ainda carregando, tente em instantes.'); return; }
+  _tokenClient.requestAccessToken();
+}
+
+// ── Fetch helper ──
+async function driveFetch(url, opts = {}) {
+  opts.headers = opts.headers || {};
+  opts.headers['Authorization'] = 'Bearer ' + _driveToken;
+  const r = await fetch(url, opts);
+  if (r.status === 401) { _driveToken = null; setDriveStatus('sessão expirada — reconecte', 'error'); return null; }
+  return r;
+}
+
+// ── Carrega o banco JSON do appDataFolder no Drive ──
+async function driveLoadDB() {
+  setDriveStatus('carregando...', '');
+  try {
+    // Lista arquivos no appDataFolder com o nome certo
+    const list = await driveFetch(
+      `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${DB_FILENAME}'&fields=files(id,name)`
+    );
+    if (!list) return;
+    const data = await list.json();
+    if (data.files && data.files.length > 0) {
+      _driveFileId = data.files[0].id;
+      const dl = await driveFetch(
+        `https://www.googleapis.com/drive/v3/files/${_driveFileId}?alt=media`
+      );
+      if (!dl) return;
+      _driveDB = await dl.json();
+    } else {
+      _driveDB = {};   // primeira vez — banco vazio
+    }
+    // Sincroniza localStorage como cópia local
+    saveDB(_driveDB);
+    const n = Object.keys(_driveDB).length;
+    setDriveStatus(`${n} paciente${n!==1?'s':''} no Drive`, 'connected');
+    // Recarrega sugestões
+  } catch(e) {
+    setDriveStatus('erro ao carregar', 'error');
+    console.error(e);
+  }
+}
+
+// ── Salva o banco inteiro de volta ao Drive ──
+async function driveSaveDB(db) {
+  const body = JSON.stringify(db);
+  try {
+    let r;
+    if (_driveFileId) {
+      // Atualiza arquivo existente
+      r = await driveFetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${_driveFileId}?uploadType=media`,
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body }
+      );
+    } else {
+      // Cria arquivo novo no appDataFolder
+      const meta = JSON.stringify({ name: DB_FILENAME, parents: ['appDataFolder'] });
+      const form = new FormData();
+      form.append('metadata', new Blob([meta], { type: 'application/json' }));
+      form.append('file',     new Blob([body],  { type: 'application/json' }));
+      r = await driveFetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+        { method: 'POST', body: form }
+      );
+      if (r) { const d = await r.json(); _driveFileId = d.id; }
+      return; // multipart já consumiu o body
+    }
+    if (!r) return;
+    const n = Object.keys(db).length;
+    setDriveStatus(`${n} paciente${n!==1?'s':''} no Drive`, 'connected');
+  } catch(e) {
+    setDriveStatus('erro ao salvar', 'error');
+    console.error(e);
+  }
+}
+
+// ══════════════════════════════════════════════
+// BUSCA E NAVEGAÇÃO DE PACIENTES
+// ══════════════════════════════════════════════
+
+function onSearchInput() {
+  const val = document.getElementById('searchInput').value.trim().toLowerCase();
+  const list = document.getElementById('searchSuggestions');
+  list.innerHTML = '';
+  if (!val) { list.style.display = 'none'; return; }
+  const db = activeDB();
+  const matches = Object.keys(db).filter(k => k.toLowerCase().includes(val)).slice(0, 8);
+  if (!matches.length) { list.style.display = 'none'; return; }
+  matches.forEach(k => {
+    const li = document.createElement('li');
+    li.textContent = k;
+    li.onclick = () => {
+      document.getElementById('searchInput').value = k;
+      list.style.display = 'none';
+      searchPatient();
+    };
+    list.appendChild(li);
+  });
+  list.style.display = 'block';
+}
+
+function searchPatient() {
+  const val = document.getElementById('searchInput').value.trim();
+  document.getElementById('searchSuggestions').style.display = 'none';
+  if (!val) { alert('Digite o nome ou ID da paciente.'); return; }
+  const db  = activeDB();
+  const rec = db[val];
+  if (!rec) {
+    if (confirm(`Paciente "${val}" não encontrada. Criar nova ficha?`)) {
+      _currentKey = val;
+      newPatientSilent();
+      document.getElementById('lbl').value = val;
+    }
+    return;
+  }
+  _currentKey = val;
+  _loadRecord(rec, val);
+}
+
+function _loadRecord(rec, key) {
+  points       = rec.points.map(p => ({...p}));
+  patients     = {};
+  patientOrder = [];
+  points.forEach(p => getPatientColor(p.label));
+  if (rec.dob) document.getElementById('dob').value = rec.dob;
+  document.getElementById('lbl').value  = key;
+  document.getElementById('searchInput').value = key;
+  rebuildPointDatasets();
+  renderTable();
+  _unsaved = false;
+  document.getElementById('unsavedBadge').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════
+// SALVAR / APAGAR / NOVO
+// ══════════════════════════════════════════════
+
+async function savePatient() {
+  const lbl = document.getElementById('lbl').value.trim();
+  const key = lbl || _currentKey;
+  if (!key) { alert('Preencha o nome/ID da paciente antes de salvar.'); return; }
+  if (points.length === 0) { alert('Nenhum ponto marcado para salvar.'); return; }
+  _currentKey = key;
+  document.getElementById('searchInput').value = key;
+
+  const rec = { dob: document.getElementById('dob').value, points: points.map(p => ({...p})) };
+
+  if (_driveToken) {
+    // Salva no Drive
+    _driveDB[key] = rec;
+    saveDB(_driveDB);  // atualiza cópia local também
+    await driveSaveDB(_driveDB);
+  } else {
+    // Fallback: só localStorage
+    const db = loadDB();
+    db[key] = rec;
+    saveDB(db);
+  }
+  flashSaved();
+}
+
+function deletePatient() {
+  const key = _currentKey || document.getElementById('searchInput').value.trim();
+  if (!key) { alert('Nenhuma paciente carregada para apagar.'); return; }
+  if (!confirm(`Apagar todos os dados de "${key}"? Esta ação não pode ser desfeita.`)) return;
+
+  if (_driveToken) {
+    delete _driveDB[key];
+    saveDB(_driveDB);
+    driveSaveDB(_driveDB);
+  } else {
+    const db = loadDB(); delete db[key]; saveDB(db);
+  }
+  newPatient();
+}
+
+function newPatient() {
+  if (_unsaved && points.length > 0) {
+    if (!confirm('Há dados não salvos. Deseja descartar e iniciar nova paciente?')) return;
+  }
+  newPatientSilent();
+}
+
+function newPatientSilent() {
+  points = []; patients = {}; patientOrder = [];
+  _currentKey = null; _unsaved = false;
+  chart.data.datasets.splice(7);
+  chart.update();
+  renderTable();
+  document.getElementById('dob').value       = '';
+  document.getElementById('lbl').value       = '';
+  document.getElementById('ht').value        = '';
+  document.getElementById('boneage').value   = '';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('unsavedBadge').style.display = 'none';
+  document.getElementById('savedBadge').style.display   = 'none';
+  updateBP();
+}
+
+// ══════════════════════════════════════════════
+// BACKUP / RESTAURAR (JSON local — fallback)
+// ══════════════════════════════════════════════
+
+function exportData() {
+  const db = _driveToken ? _driveDB : loadDB();
+  if (!Object.keys(db).length) { alert('Nenhum dado salvo para exportar.'); return; }
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'curva_meninas_backup.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      let count = 0;
+      if (_driveToken) {
+        Object.entries(imported).forEach(([k, v]) => { _driveDB[k] = v; count++; });
+        saveDB(_driveDB);
+        await driveSaveDB(_driveDB);
+      } else {
+        const db = loadDB();
+        Object.entries(imported).forEach(([k, v]) => { db[k] = v; count++; });
+        saveDB(db);
+      }
+      alert(`${count} paciente(s) importada(s)! Use o campo de busca para carregar.`);
+    } catch(err) { alert('Erro ao importar: arquivo inválido.'); }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ── INIT ──
+window.addEventListener('load', () => {
+  initGoogleDrive();
+});
+
+// Fecha sugestões ao clicar fora
+document.addEventListener('click', e => {
+  if (!e.target.closest('#searchInput') && !e.target.closest('#searchSuggestions'))
+    document.getElementById('searchSuggestions').style.display = 'none';
+});
+
+// ══════════════════════════════════════════════
+// ALTURA ALVO (Canal Familiar)
+// ══════════════════════════════════════════════
+
+window._targetHt = null;
+
+function calcTargetHeight() {
+  const f = parseFloat(document.getElementById('fatherHt').value);
+  const m = parseFloat(document.getElementById('motherHt').value);
+  if (!isNaN(f) && !isNaN(m)) {
+    const target = ((f + m) / 2) - 6.5;
+    document.getElementById('targetHt').value = target.toFixed(1);
+  }
+}
+
+function applyTargetHeight() {
+  const v = parseFloat(document.getElementById('targetHt').value);
+  if (isNaN(v) || v < 100 || v > 220) {
+    alert('Informe uma altura alvo válida (pode calcular pelos dados dos pais ou digitar manualmente).');
+    return;
+  }
+  window._targetHt = v;
+  chart.update();
+}
+
+function updateTargetBand() {
+  // Atualiza em tempo real se já estava visível
+  if (window._targetHt !== null) {
+    const v = parseFloat(document.getElementById('targetHt').value);
+    if (!isNaN(v)) { window._targetHt = v; chart.update(); }
+  }
+}
+
+function clearTargetHeight() {
+  window._targetHt = null;
+  document.getElementById('targetHt').value  = '';
+  document.getElementById('fatherHt').value  = '';
+  document.getElementById('motherHt').value  = '';
+  chart.update();
+}
+
+// Salva altura alvo junto com os dados da paciente
+const _origSavePatient = savePatient;
+savePatient = async function() {
+  await _origSavePatient();
+};
+
+// Restaura altura alvo ao carregar paciente
+const _origLoadRecord = _loadRecord;
+// Patch: ao salvar, inclui targetHt no registro
+const _patchedSave = async function() {
+  const lbl = document.getElementById('lbl').value.trim();
+  const key = lbl || _currentKey;
+  if (!key) { alert('Preencha o nome/ID da paciente antes de salvar.'); return; }
+  if (points.length === 0) { alert('Nenhum ponto marcado para salvar.'); return; }
+  _currentKey = key;
+  document.getElementById('searchInput').value = key;
+
+  const rec = {
+    dob: document.getElementById('dob').value,
+    points: points.map(p => ({...p})),
+    targetHt: window._targetHt,
+    fatherHt: document.getElementById('fatherHt').value,
+    motherHt: document.getElementById('motherHt').value,
+  };
+
+  if (_driveToken) {
+    _driveDB[key] = rec;
+    saveDB(_driveDB);
+    await driveSaveDB(_driveDB);
+  } else {
+    const db = loadDB();
+    db[key] = rec;
+    saveDB(db);
+  }
+  flashSaved();
+};
+savePatient = _patchedSave;
+
+// Patch _loadRecord para restaurar altura alvo
+function _loadRecord(rec, key) {
+  points       = rec.points.map(p => ({...p}));
+  patients     = {};
+  patientOrder = [];
+  points.forEach(p => getPatientColor(p.label));
+  if (rec.dob) document.getElementById('dob').value = rec.dob;
+  document.getElementById('lbl').value  = key;
+  document.getElementById('searchInput').value = key;
+
+  // Restaura altura alvo
+  window._targetHt = rec.targetHt || null;
+  document.getElementById('targetHt').value = rec.targetHt ? rec.targetHt.toFixed(1) : '';
+  document.getElementById('fatherHt').value = rec.fatherHt || '';
+  document.getElementById('motherHt').value = rec.motherHt || '';
+
+  rebuildPointDatasets();
+  renderTable();
+  _unsaved = false;
+  document.getElementById('unsavedBadge').style.display = 'none';
+}
+
+</script>
+</body>
+</html>
