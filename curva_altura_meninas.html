@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <title>Altura para Idade – Meninas 5 a 19 anos (OMS)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,21 +25,34 @@
 
   /* ── FORMULÁRIO ── */
   .form-panel {
-    background: #f0f0f0;
-    border: 1px solid #ccc;
+    background: #f7f0f7;
+    border: 1px solid #d8a8d8;
     border-radius: 6px;
-    padding: 10px 14px;
+    padding: 10px 14px 8px;
     margin-bottom: 10px;
+  }
+  .form-row {
     display: flex;
     align-items: flex-end;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .form-row + .form-row {
+    padding-top: 6px;
+    border-top: 1px dashed #d0b0d0;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
   }
   .form-panel label {
-    font-size: 12px;
-    color: #444;
-    display: block;
+    font-size: 11px;
+    color: #555;
     margin-bottom: 3px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
   .form-panel input[type="date"],
   .form-panel input[type="number"],
@@ -47,30 +61,52 @@
     border-radius: 4px;
     padding: 5px 8px;
     font-size: 13px;
-    width: 140px;
   }
+  input#refdate { width: 145px; background: #fffbe6; border-color: #c9a800; }
+  input#dob     { width: 145px; }
+  input#ht      { width: 100px; }
+  input#lbl     { width: 160px; }
   .form-panel button {
     background: #d63384;
     color: white;
     border: none;
     border-radius: 4px;
-    padding: 7px 16px;
+    padding: 7px 14px;
     font-size: 13px;
     cursor: pointer;
     font-weight: bold;
+    align-self: flex-end;
   }
   .form-panel button:hover { background: #b5206e; }
   .btn-clear {
-    background: #666 !important;
+    background: #888 !important;
   }
-  .btn-clear:hover { background: #444 !important; }
+  .btn-clear:hover { background: #555 !important; }
+  .form-hint {
+    font-size: 11px;
+    color: #888;
+    align-self: flex-end;
+    padding-bottom: 6px;
+  }
   #error-msg {
     font-size: 12px;
     color: #c0392b;
     min-height: 16px;
-    width: 100%;
-    margin-top: 2px;
+    margin-top: 4px;
   }
+  .bp-result {
+    background: #eaf4ea;
+    border: 1px solid #7bba7b;
+    border-radius: 5px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: #1a5c1a;
+    line-height: 1.6;
+    margin-top: 6px;
+    display: inline-block;
+  }
+  .bp-result strong { font-size: 15px; }
+  .bp-result.empty { background:#f5f5f5; border-color:#ccc; color:#999; font-style:italic; }
 
   /* ── CABEÇALHO DO GRÁFICO ── */
   .chart-header {
@@ -164,6 +200,78 @@
     margin-top: 4px;
   }
 
+  /* ── GERENCIADOR DE PACIENTES ── */
+  .patient-panel {
+    background: #f0f7ff;
+    border: 1px solid #a8c8e8;
+    border-radius: 6px;
+    padding: 10px 14px 8px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .patient-panel label {
+    font-size: 11px; color: #336; font-weight: bold;
+    text-transform: uppercase; letter-spacing: 0.03em;
+    display: block; margin-bottom: 3px;
+  }
+  .patient-panel input, .patient-panel select {
+    border: 1px solid #99b; border-radius: 4px;
+    padding: 5px 8px; font-size: 13px;
+  }
+  .patient-panel button {
+    background: #2a6099; color: white; border: none;
+    border-radius: 4px; padding: 7px 13px; font-size: 13px;
+    cursor: pointer; font-weight: bold; align-self: flex-end;
+  }
+  .patient-panel button:hover { background: #1a4070; }
+  .btn-export { background: #5a7a2a !important; }
+  .btn-export:hover { background: #3a5a10 !important; }
+  .btn-import { background: #7a4a2a !important; }
+  .btn-import:hover { background: #5a3010 !important; }
+  .btn-newpt  { background: #2a6099 !important; }
+  .btn-save   { background: #1a7a1a !important; }
+  .btn-save:hover { background: #0f5a0f !important; }
+  .btn-drive  { background: #1a73e8 !important; }
+  .btn-drive:hover { background: #1557b0 !important; }
+  .drive-status {
+    font-size: 11px; padding: 3px 10px; border-radius: 3px;
+    border: 1px solid #ccc; background: #f8f8f8; color: #555;
+    align-self: flex-end; white-space: nowrap;
+  }
+  .drive-status.connected { background: #e8f5e9; border-color: #81c784; color: #2e7d32; }
+  .drive-status.error     { background: #fdecea; border-color: #e57373; color: #c62828; }
+  .btn-save:hover { background: #0f5a0f !important; }
+  .btn-delpt  { background: #992222 !important; }
+  .btn-delpt:hover  { background: #660000 !important; }
+  .saved-badge {
+    font-size: 11px; color: #3a7a3a; background: #d8f0d8;
+    border: 1px solid #9ac89a; border-radius: 3px;
+    padding: 2px 8px; margin-left: 6px; display: none;
+  }
+  .unsaved-badge {
+    font-size: 11px; color: #996600; background: #fff5cc;
+    border: 1px solid #ddaa44; border-radius: 3px;
+    padding: 2px 8px; margin-left: 4px; display: none;
+  }
+
+  .search-wrap { position: relative; }
+  #searchSuggestions {
+    display: none; position: absolute; top: 100%; left: 0; z-index: 999;
+    background: white; border: 1px solid #99b; border-radius: 0 0 4px 4px;
+    min-width: 200px; max-height: 200px; overflow-y: auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  }
+  #searchSuggestions li {
+    list-style: none; padding: 7px 12px; cursor: pointer; font-size: 13px;
+  }
+  #searchSuggestions li:hover { background: #e8f0ff; }
+
+  @media print {
+    .patient-panel { display: none; }
+  }
   @media print {
     body { background: white; padding: 0; }
     .page { box-shadow: none; width: 100%; padding: 8mm; }
@@ -176,23 +284,74 @@
 
 <div class="page">
 
+  <!-- Gerenciador de Pacientes -->
+  <div class="patient-panel" id="patientPanel">
+    <div class="form-group">
+      <label>Buscar paciente</label>
+      <div class="search-wrap">
+        <input type="text" id="searchInput" placeholder="Digite nome ou ID..." style="width:200px"
+               oninput="onSearchInput()" onkeydown="if(event.key==='Enter')searchPatient()">
+        <ul id="searchSuggestions"></ul>
+      </div>
+    </div>
+    <button class="btn-newpt" onclick="searchPatient()" title="Buscar e carregar paciente">🔍 Carregar</button>
+    <button class="btn-newpt" onclick="newPatient()" title="Limpar gráfico para nova paciente">＋ Nova paciente</button>
+    <button class="btn-save"  onclick="savePatient()" title="Salvar dados da paciente atual">💾 Salvar</button>
+    <button class="btn-delpt" onclick="deletePatient()" title="Apagar paciente">🗑 Apagar</button>
+    <div style="flex:1"></div>
+    <button class="btn-drive" onclick="driveSignIn()" id="btnDriveLogin" title="Conectar ao Google Drive">
+      <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px;margin-right:4px"><path fill="white" d="M4.56 13.32L1.44 8l3.12-5.32h6.24L13.92 8l-3.12 5.32zm6.36 5.36L8.76 15h6.48l2.16 3.68zm8.64-5.36h-6.24L10.2 8l3.12-5.32h.12L22.56 8z"/></svg>Drive
+    </button>
+    <span class="drive-status" id="driveStatus">não conectado</span>
+    <button class="btn-export" onclick="exportData()">⬇ Backup</button>
+    <button class="btn-import" onclick="document.getElementById('importFile').click()">⬆ Restaurar</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    <span class="saved-badge" id="savedBadge">✓ Salvo no Drive</span>
+    <span class="unsaved-badge" id="unsavedBadge">● não salvo</span>
+  </div>
+
   <!-- Formulário -->
   <div class="form-panel" id="formPanel">
-    <div>
-      <label>Data de nascimento</label>
-      <input type="date" id="dob">
+    <!-- Linha 1: data da consulta -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>📅 Data da consulta</label>
+        <input type="date" id="refdate">
+      </div>
+      <span class="form-hint">← Ajuste se necessário (padrão: hoje)</span>
     </div>
-    <div>
-      <label>Altura (cm)</label>
-      <input type="number" id="ht" min="60" max="200" step="0.1" placeholder="ex: 132.5">
-    </div>
-    <div>
-      <label>Paciente / ID</label>
-      <input type="text" id="lbl" placeholder="Nome ou código">
-    </div>
-    <div>
+    <!-- Linha 2: dados da paciente -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data de nascimento</label>
+        <input type="date" id="dob">
+      </div>
+      <div class="form-group">
+        <label>Paciente / ID</label>
+        <input type="text" id="lbl" placeholder="Nome ou código">
+      </div>
+      <div class="form-group">
+        <label>Altura (cm)</label>
+        <input type="number" id="ht" min="60" max="200" step="0.1" placeholder="ex: 132.5" oninput="updateBP()">
+      </div>
+      <div class="form-group">
+        <label>Idade óssea (anos) <span style="font-weight:normal;color:#888">opcional</span></label>
+        <input type="number" id="boneage" min="1" max="19" step="0.1" placeholder="ex: 10.5" style="width:110px" oninput="updateBP()">
+      </div>
+      <div class="form-group">
+        <label>Maturação óssea</label>
+        <select id="maturation" style="width:110px;border:1px solid #bbb;border-radius:4px;padding:5px 6px;font-size:13px;" onchange="updateBP()">
+          <option value="normal">Normal</option>
+          <option value="atrasada">Atrasada</option>
+          <option value="avancada">Avançada</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Previsão Bayley-Pinneau</label>
+        <div class="bp-result empty" id="bpResult">preencha altura e I.O.</div>
+      </div>
       <button onclick="addPoint()">＋ Marcar no gráfico</button>
-      <button class="btn-clear" onclick="clearAll()" style="margin-left:6px">Limpar tudo</button>
+      <button class="btn-clear" onclick="clearAll()">Limpar tudo</button>
     </div>
     <div id="error-msg"></div>
   </div>
@@ -223,18 +382,26 @@
   </div>
 
   <div class="footer-ref">2007 WHO Reference</div>
+  <div id="symbolLegend" style="display:none; font-size:11px; color:#444; margin-top:4px; display:flex; gap:20px; flex-wrap:wrap;">
+    <span><svg width="14" height="14" style="vertical-align:middle;margin-right:3px"><circle cx="7" cy="7" r="6" fill="#1565C0" stroke="white" stroke-width="1.5"/></svg> Bolinha = Idade cronológica</span>
+    <span><svg width="14" height="14" style="vertical-align:middle;margin-right:3px"><line x1="1" y1="1" x2="13" y2="13" stroke="#1565C0" stroke-width="2.5"/><line x1="13" y1="1" x2="1" y2="13" stroke="#1565C0" stroke-width="2.5"/></svg> X = Idade óssea</span>
+  </div>
 
   <!-- Tabela de pontos -->
   <div class="points-list" id="ptsList" style="display:none">
     <table>
       <thead>
         <tr>
-          <th>Ponto</th>
           <th>Paciente</th>
+          <th>Data consulta</th>
           <th>Data nasc.</th>
-          <th>Idade (anos/meses)</th>
+          <th>Idade cronológica</th>
+          <th>Idade óssea</th>
+          <th>Maturação</th>
           <th>Altura (cm)</th>
-          <th>Z-score aprox.</th>
+          <th>Z-score (ic)</th>
+          <th>Z-score (io)</th>
+          <th>Prev. estatura (BP)</th>
           <th class="no-print"></th>
         </tr>
       </thead>
@@ -357,13 +524,33 @@ const LINE_COLORS = {
   m3: '#1a1a1a',   // preto
 };
 
-const POINT_COLORS = [
-  '#1565C0','#6A1B9A','#00695C','#E65100',
-  '#AD1457','#2E7D32','#4527A0','#00838F'
-];
+function interpolate(key, ageM) {
+  const idx = RAW.findIndex(r => r[0] === ageM);
+  if (idx !== -1) {
+    const col = {p3:1,p2:2,p1:3,z0:4,m1:5,m2:6,m3:7}[key];
+    return RAW[idx][col];
+  }
+  const lo = RAW.filter(r => r[0] < ageM).pop();
+  const hi = RAW.find(r => r[0] > ageM);
+  if (!lo || !hi) return null;
+  const col = {p3:1,p2:2,p1:3,z0:4,m1:5,m2:6,m3:7}[key];
+  const frac = (ageM - lo[0]) / (hi[0] - lo[0]);
+  return lo[col] + frac * (hi[col] - lo[col]);
+}
 
-let colorIdx = 0;
-let points = [];
+function calcZ(ageM, ht) {
+  const z0  = interpolate('z0', ageM);
+  const zp1 = interpolate('p1', ageM);
+  const zm1 = interpolate('m1', ageM);
+  if (z0 === null) return null;
+  if (ht >= z0) {
+    const sd = zp1 - z0; if (sd <= 0) return null;
+    return ((ht - z0) / sd).toFixed(2);
+  } else {
+    const sd = z0 - zm1; if (sd <= 0) return null;
+    return (-(z0 - ht) / sd).toFixed(2);
+  }
+}
 
 // Plugin customizado para labels Z no lado direito
 const zLabelPlugin = {
@@ -503,8 +690,8 @@ const cfg = {
         }
       },
       y: {
-        min: 88,
-        max: 192,
+        min: 85,
+        max: 195,
         border: { color: '#555' },
         grid: {
           color: (ctx) => {
@@ -610,114 +797,188 @@ function mkLine(key, label, color, lw) {
 
 // Cria o gráfico
 const canvas = document.getElementById('whoChart');
-canvas.height = 420;
+canvas.height = 560;
 const chart = new Chart(canvas, cfg);
 
 // ── LÓGICA DE PONTOS ──
 
-function calcAgeMonths(dobStr) {
-  const now = new Date();
+// Pré-preenche a data da consulta com hoje
+(function() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm   = String(today.getMonth() + 1).padStart(2, '0');
+  const dd   = String(today.getDate()).padStart(2, '0');
+  document.getElementById('refdate').value = `${yyyy}-${mm}-${dd}`;
+})();
+
+function calcAgeMonths(dobStr, refStr) {
+  const ref = refStr ? new Date(refStr) : new Date();
   const b   = new Date(dobStr);
-  let m = (now.getFullYear() - b.getFullYear()) * 12 + (now.getMonth() - b.getMonth());
-  if (now.getDate() < b.getDate()) m--;
+  let m = (ref.getFullYear() - b.getFullYear()) * 12 + (ref.getMonth() - b.getMonth());
+  if (ref.getDate() < b.getDate()) m--;
   return m;
 }
 
-function interpolate(key, ageM) {
-  const idx = RAW.findIndex(r => r[0] === ageM);
-  if (idx !== -1) {
-    const col = {p3:1,p2:2,p1:3,z0:4,m1:5,m2:6,m3:7}[key];
-    return RAW[idx][col];
-  }
-  // interpolação linear
-  const lo = RAW.filter(r => r[0] < ageM).pop();
-  const hi = RAW.find(r => r[0] > ageM);
-  if (!lo || !hi) return null;
-  const col = {p3:1,p2:2,p1:3,z0:4,m1:5,m2:6,m3:7}[key];
-  const frac = (ageM - lo[0]) / (hi[0] - lo[0]);
-  return lo[col] + frac * (hi[col] - lo[col]);
-}
+// Paleta de cores por paciente (mesma cor em todas as medições dela)
+const PATIENT_COLORS = [
+  '#1565C0','#6A1B9A','#00695C','#BF360C',
+  '#AD1457','#37474F','#4527A0','#00695C'
+];
 
-function calcZ(ageM, ht) {
-  const z0  = interpolate('z0', ageM);
-  const zp1 = interpolate('p1', ageM);
-  const zm1 = interpolate('m1', ageM);
-  const zp2 = interpolate('p2', ageM);
-  const zm2 = interpolate('m2', ageM);
-  if (z0 === null) return null;
-  if (ht >= z0) {
-    const sd = zp1 - z0; if (sd <= 0) return null;
-    return ((ht - z0) / sd).toFixed(2);
-  } else {
-    const sd = z0 - zm1; if (sd <= 0) return null;
-    return (-(z0 - ht) / sd).toFixed(2);
+// patients: { [key]: { color, dobStr, datasetIdx } }
+// points: array de medições individuais
+let patients = {};
+let patientOrder = [];
+let points = [];
+
+function getPatientColor(key) {
+  if (!patients[key]) {
+    const color = PATIENT_COLORS[patientOrder.length % PATIENT_COLORS.length];
+    patients[key] = { color, datasetIdx: null };
+    patientOrder.push(key);
   }
+  return patients[key].color;
 }
 
 function addPoint() {
-  const dobV = document.getElementById('dob').value;
-  const htV  = parseFloat(document.getElementById('ht').value);
-  const lblV = document.getElementById('lbl').value.trim() || ('P' + (points.length + 1));
-  const err  = document.getElementById('error-msg');
+  const refV    = document.getElementById('refdate').value;
+  const dobV    = document.getElementById('dob').value;
+  const htV     = parseFloat(document.getElementById('ht').value);
+  const lblV    = document.getElementById('lbl').value.trim() || 'Paciente';
+  const boneRaw = document.getElementById('boneage').value;
+  const boneV   = boneRaw !== '' ? parseFloat(boneRaw) : null;
+  const matV    = document.getElementById('maturation').value;
+  const err     = document.getElementById('error-msg');
   err.textContent = '';
 
+  if (!refV) { err.textContent = 'Informe a data da consulta.'; return; }
   if (!dobV) { err.textContent = 'Informe a data de nascimento.'; return; }
   if (isNaN(htV) || htV < 60 || htV > 200) { err.textContent = 'Altura inválida (60–200 cm).'; return; }
+  if (boneV !== null && (isNaN(boneV) || boneV < 1 || boneV > 19)) {
+    err.textContent = 'Idade óssea inválida (1–19 anos).'; return;
+  }
 
-  const ageM = calcAgeMonths(dobV);
+  const ageM = calcAgeMonths(dobV, refV);
   if (ageM < 60 || ageM > 228) {
     err.textContent = `Idade fora do intervalo 5–19 anos (calculada: ${(ageM/12).toFixed(1)} anos).`;
     return;
   }
 
-  const color = POINT_COLORS[colorIdx % POINT_COLORS.length];
-  colorIdx++;
+  const boneM = boneV !== null ? Math.round(boneV * 12) : null;
+  const color  = getPatientColor(lblV);
   const zScore = calcZ(ageM, htV);
-  const pt = { id: Date.now(), label: lblV, dob: dobV, ageM, ht: htV, color, z: zScore };
+  const zBone  = boneM !== null ? calcZ(boneM, htV) : null;
+  const bpPred = (boneV !== null) ? calcBP(htV, boneV, matV) : null;
+  const pt     = { id: Date.now(), label: lblV, dob: dobV, ref: refV, ageM, ht: htV, color,
+                   z: zScore, boneM, boneV, zBone, mat: matV, bp: bpPred };
   points.push(pt);
 
-  // Adiciona dataset ao gráfico
-  chart.data.datasets.push({
-    label: lblV,
-    _pt: true,
-    _name: lblV,
-    data: [{x: ageM, y: htV}],
-    pointBackgroundColor: color,
-    pointBorderColor: 'white',
-    pointBorderWidth: 2,
-    pointRadius: 7,
-    pointHoverRadius: 9,
-    pointStyle: 'circle',
-    showLine: false,
-    type: 'scatter',
-  });
-  chart.update();
+  rebuildPointDatasets();
   renderTable();
+  markUnsaved();
 
-  // Limpa campos
   document.getElementById('ht').value = '';
-  document.getElementById('lbl').value = '';
+  document.getElementById('boneage').value = '';
+  updateBP();
+  document.getElementById('ht').focus();
+}
+
+function rebuildPointDatasets() {
+  chart.data.datasets.splice(7);
+
+  const byPatient = {};
+  points.forEach(p => {
+    if (!byPatient[p.label]) byPatient[p.label] = [];
+    byPatient[p.label].push(p);
+  });
+
+  patientOrder.forEach(key => {
+    if (!byPatient[key]) return;
+    const pts   = byPatient[key].slice().sort((a,b) => a.ageM - b.ageM);
+    const color = patients[key].color;
+
+    // ── Dataset 1: idade cronológica — bolinhas, com linha de conexão
+    chart.data.datasets.push({
+      label: key + ' (IC)',
+      _pt: true, _name: key,
+      data: pts.map(p => ({ x: p.ageM, y: p.ht })),
+      borderColor: color,
+      borderWidth: pts.length > 1 ? 1.5 : 0,
+      borderDash: [4, 3],
+      pointBackgroundColor: color,
+      pointBorderColor: 'white',
+      pointBorderWidth: 2,
+      pointRadius: 7,
+      pointHoverRadius: 9,
+      pointStyle: 'circle',
+      showLine: true,
+      tension: 0,
+      fill: false,
+      type: 'scatter',
+    });
+
+    // ── Dataset 2: idade óssea — X, apenas pontos que têm idade óssea
+    const bonePts = pts.filter(p => p.boneM !== null);
+    if (bonePts.length > 0) {
+      chart.data.datasets.push({
+        label: key + ' (IO)',
+        _pt: true, _name: key + ' (IO)',
+        data: bonePts.map(p => ({ x: p.boneM, y: p.ht })),
+        borderColor: color,
+        borderWidth: bonePts.length > 1 ? 1.5 : 0,
+        borderDash: [2, 4],
+        pointBackgroundColor: 'white',
+        pointBorderColor: color,
+        pointBorderWidth: 2.5,
+        pointRadius: 8,
+        pointHoverRadius: 10,
+        pointStyle: 'crossRot',   // X aberto
+        showLine: true,
+        tension: 0,
+        fill: false,
+        type: 'scatter',
+      });
+    }
+  });
+
+  chart.update();
+
+  // Mostra legenda de símbolos se houver algum ponto com idade óssea
+  const hasAnyBone = points.some(p => p.boneM !== null);
+  const leg = document.getElementById('symbolLegend');
+  if (leg) leg.style.display = hasAnyBone ? 'flex' : 'none';
 }
 
 function removePoint(id) {
   const idx = points.findIndex(p => p.id === id);
   if (idx === -1) return;
+  const removed = points[idx];
   points.splice(idx, 1);
-  chart.data.datasets.splice(7 + idx, 1);
-  chart.update();
+
+  // Se era o último ponto dessa paciente, remove ela da lista
+  const remaining = points.filter(p => p.label === removed.label);
+  if (remaining.length === 0) {
+    delete patients[removed.label];
+    patientOrder = patientOrder.filter(k => k !== removed.label);
+  }
+
+  rebuildPointDatasets();
   renderTable();
+  markUnsaved();
 }
 
 function clearAll() {
   points = [];
-  colorIdx = 0;
+  patients = {};
+  patientOrder = [];
   chart.data.datasets.splice(7);
   chart.update();
   renderTable();
+  markUnsaved();
 }
 
-function formatDob(dobStr) {
-  const [y,m,d] = dobStr.split('-');
+function formatDate(dateStr) {
+  const [y,m,d] = dateStr.split('-');
   return `${d}/${m}/${y}`;
 }
 
@@ -727,23 +988,498 @@ function renderTable() {
   tbody.innerHTML = '';
   if (points.length === 0) { sec.style.display = 'none'; return; }
   sec.style.display = '';
+
+  // Agrupa por paciente para exibição
+  const byPatient = {};
   points.forEach(p => {
-    const yr = Math.floor(p.ageM / 12);
-    const mo = p.ageM % 12;
-    const zStr = p.z !== null ? p.z : '—';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><span class="dot-preview" style="background:${p.color}"></span>${p.label}</td>
-      <td>${p.label}</td>
-      <td>${formatDob(p.dob)}</td>
-      <td>${yr} anos e ${mo} meses</td>
-      <td>${p.ht.toFixed(1)} cm</td>
-      <td>${zStr}</td>
-      <td class="no-print"><button class="btn-del" onclick="removePoint(${p.id})" title="Remover">✕</button></td>
-    `;
-    tbody.appendChild(tr);
+    if (!byPatient[p.label]) byPatient[p.label] = [];
+    byPatient[p.label].push(p);
+  });
+
+  patientOrder.forEach(key => {
+    if (!byPatient[key]) return;
+    const pts = byPatient[key].slice().sort((a,b) => a.ageM - b.ageM);
+    pts.forEach((p, i) => {
+      const yr    = Math.floor(p.ageM / 12);
+      const mo    = p.ageM % 12;
+      const zStr  = p.z     !== null ? p.z     : '—';
+      const zBStr = p.zBone !== null ? p.zBone : '—';
+      const boStr = p.boneV !== null ? p.boneV.toFixed(1) + ' anos' : '—';
+      const matStr = p.boneV !== null ? (p.mat === 'atrasada' ? 'Atrasada' : p.mat === 'avancada' ? 'Avançada' : 'Normal') : '—';
+      const bpStr = p.bp !== null ? `<strong>${p.bp.toFixed(1)} cm</strong>` : '—';
+      const tr    = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${i === 0 ? `<span class="dot-preview" style="background:${p.color}"></span><strong>${p.label}</strong>` : ''}</td>
+        <td>${formatDate(p.ref)}</td>
+        <td>${formatDate(p.dob)}</td>
+        <td>${yr}a ${mo}m</td>
+        <td>${boStr}</td>
+        <td>${matStr}</td>
+        <td>${p.ht.toFixed(1)} cm</td>
+        <td>${zStr}</td>
+        <td>${zBStr}</td>
+        <td>${bpStr}</td>
+        <td class="no-print"><button class="btn-del" onclick="removePoint(${p.id})" title="Remover">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
   });
 }
+
+// ── TABELA BAYLEY-PINNEAU ──
+// Formato: { io: [atrasada_col1, normal_col1, avancada_col1, atrasada_col2, normal_col2, avancada_col2] }
+// col1 = colunas da esquerda (estatura parcial); col2 = colunas da direita
+// Fonte: tabelas originais BP para meninas
+// A tabela original tem dois blocos de colunas. Usamos col1 quando disponível, col2 como alternativa.
+// Regra: se col1 disponível usa col1, senão col2. Se só col2, usa col2.
+// io em décimos de ano (ex: 6.0, 6.3, ...)
+const BP_TABLE = {
+  // io: [at1, no1, av1, at2, no2, av2]  (null = célula vazia na tabela original)
+   6.0: [0.733, 0.720, null,  0.680, null,  null ],
+   6.3: [0.742, 0.729, null,  0.690, null,  null ],
+   6.6: [0.751, 0.738, null,  0.700, null,  null ],
+   6.9: [0.763, 0.751, null,  0.709, null,  null ],
+   7.0: [0.770, 0.757, 0.722, 0.718, 0.695, 0.670],
+   7.3: [0.779, 0.765, 0.732, 0.728, 0.702, 0.676],
+   7.6: [0.788, 0.772, 0.742, 0.738, 0.709, 0.683],
+   7.9: [0.797, 0.782, 0.750, 0.747, 0.716, 0.689],
+   8.0: [0.804, 0.790, 0.760, 0.756, 0.723, 0.696],
+   8.3: [0.813, 0.801, 0.771, 0.765, 0.731, 0.703],
+   8.6: [0.823, 0.810, 0.784, 0.773, 0.739, 0.709],
+   8.9: [0.836, 0.821, 0.790, 0.779, 0.746, 0.715],
+   9.0: [0.841, 0.827, 0.800, 0.786, 0.752, 0.720],
+   9.3: [0.851, 0.836, 0.809, 0.794, 0.761, 0.728],
+   9.6: [0.858, 0.844, 0.819, 0.800, 0.769, 0.734],
+   9.9: [0.866, 0.853, 0.828, 0.807, 0.777, 0.741],
+  10.0: [0.874, 0.862, 0.841, 0.812, 0.784, 0.747],
+  10.3: [0.884, 0.874, 0.856, 0.816, 0.791, 0.753],
+  10.6: [0.896, 0.884, 0.870, 0.819, 0.795, 0.758],
+  10.9: [0.907, 0.896, 0.883, 0.821, 0.800, 0.763],
+  11.0: [0.918, 0.906, 0.887, 0.823, 0.804, 0.767],
+  11.3: [0.922, 0.910, 0.891, 0.827, 0.812, 0.776],
+  11.6: [0.926, 0.914, 0.897, 0.838, 0.818, 0.786],
+  11.9: [0.929, 0.918, 0.901, 0.839, 0.827, 0.800],
+  12.0: [0.932, 0.922, 0.913, 0.845, 0.834, 0.809],
+  12.3: [0.942, 0.932, 0.924, 0.852, 0.843, 0.818],
+  12.6: [0.949, 0.941, 0.935, 0.860, 0.853, 0.828],
+  12.9: [0.957, 0.950, 0.945, 0.869, 0.863, 0.839],
+  13.0: [0.964, 0.958, 0.955, 0.880, 0.876, 0.850],
+  13.3: [0.971, 0.967, 0.963, null,  0.890, 0.863],
+  13.6: [0.977, 0.974, 0.968, null,  0.902, 0.875],
+  13.9: [0.981, 0.978, 0.972, null,  0.914, 0.890],
+  14.0: [0.983, 0.980, 0.977, null,  0.927, 0.905],
+  14.3: [0.986, 0.983, 0.980, null,  0.938, 0.918],
+  14.6: [0.989, 0.986, 0.983, null,  0.948, 0.930],
+  14.9: [0.992, 0.988, 0.986, null,  0.958, 0.943],
+  15.0: [0.994, 0.990, 0.988, null,  0.968, 0.958],
+  15.3: [0.995, 0.991, 0.990, null,  0.973, 0.967],
+  15.6: [0.996, 0.993, 0.992, null,  0.976, 0.971],
+  15.9: [0.997, 0.994, 0.993, null,  0.980, 0.976],
+  16.0: [0.998, 0.996, 0.994, null,  0.982, 0.980],
+  16.3: [0.999, 0.996, 0.995, null,  0.985, 0.983],
+  16.6: [0.999, 0.997, 0.997, null,  0.987, 0.985],
+  16.9: [0.9995,0.998, 0.998, null,  0.989, 0.988],
+  17.0: [1.000, 0.999, 0.999, null,  0.991, 0.990],
+  17.3: [null,  null,  null,  null,  0.993, null ],
+  17.6: [null,  0.9995,0.9995,null,  0.994, null ],
+  17.9: [null,  null,  null,  null,  0.995, null ],
+  18.0: [null,  1.000, null,  null,  0.996, null ],
+  18.3: [null,  null,  null,  null,  0.998, null ],
+  18.6: [null,  null,  null,  null,  1.000, null ],
+};
+
+// Retorna fator BP interpolado para uma dada idade óssea e maturação
+// Tenta col1 primeiro; se nula, usa col2
+function getBPFactor(ioAnos, mat) {
+  const colIdx = { atrasada: 0, normal: 1, avancada: 2 }[mat] ?? 1;
+
+  // Encontra as duas chaves mais próximas para interpolação
+  const keys = Object.keys(BP_TABLE).map(Number).sort((a,b)=>a-b);
+  const io = Math.round(ioAnos * 10) / 10; // arredonda para 1 decimal
+
+  // Procura chave exata primeiro
+  let loKey = null, hiKey = null;
+  for (let i = 0; i < keys.length; i++) {
+    if (Math.abs(keys[i] - io) < 0.001) {
+      // chave exata
+      const row = BP_TABLE[keys[i]];
+      const v1 = row[colIdx];
+      const v2 = row[colIdx + 3];
+      const v = v1 !== null ? v1 : (v2 !== null ? v2 : null);
+      return v;
+    }
+    if (keys[i] < io) loKey = keys[i];
+    if (keys[i] > io && hiKey === null) hiKey = keys[i];
+  }
+
+  // Interpolação linear entre loKey e hiKey
+  if (loKey === null || hiKey === null) return null;
+
+  function getVal(k) {
+    const row = BP_TABLE[k];
+    const v1 = row[colIdx];
+    const v2 = row[colIdx + 3];
+    return v1 !== null ? v1 : (v2 !== null ? v2 : null);
+  }
+
+  const vLo = getVal(loKey);
+  const vHi = getVal(hiKey);
+  if (vLo === null || vHi === null) return vLo !== null ? vLo : vHi;
+
+  const frac = (io - loKey) / (hiKey - loKey);
+  return vLo + frac * (vHi - vLo);
+}
+
+function calcBP(alturaAtual, ioAnos, mat) {
+  const fator = getBPFactor(ioAnos, mat);
+  if (fator === null || fator === 0) return null;
+  return alturaAtual / fator;
+}
+
+// Atualiza a caixa de previsão em tempo real conforme o usuário digita
+function updateBP() {
+  const htRaw   = document.getElementById('ht').value;
+  const boRaw   = document.getElementById('boneage').value;
+  const mat     = document.getElementById('maturation').value;
+  const box     = document.getElementById('bpResult');
+  if (!box) return;
+
+  const ht  = parseFloat(htRaw);
+  const bio = parseFloat(boRaw);
+
+  if (isNaN(ht) || isNaN(bio) || ht < 60 || bio < 1 || bio > 19) {
+    box.className = 'bp-result empty';
+    box.innerHTML = 'preencha altura e I.O.';
+    return;
+  }
+
+  const pred = calcBP(ht, bio, mat);
+  if (pred === null) {
+    box.className = 'bp-result empty';
+    box.innerHTML = 'fator não disponível para esta I.O.';
+    return;
+  }
+
+  const matLabel = mat === 'atrasada' ? 'atrasada' : mat === 'avancada' ? 'avançada' : 'normal';
+  box.className = 'bp-result';
+  box.innerHTML = `<strong>${pred.toFixed(1)} cm</strong><br><span style="font-size:11px;color:#4a7a4a">(maturação ${matLabel})</span>`;
+}
+
+// ══════════════════════════════════════════════
+// PERSISTÊNCIA — Google Drive + localStorage fallback
+// ══════════════════════════════════════════════
+
+const CLIENT_ID   = '182415914086-fmpb9lsdb0gicdhg6s1igf9ooancn960.apps.googleusercontent.com';
+const SCOPES      = 'https://www.googleapis.com/auth/drive.appdata';
+const DB_FILENAME = 'curva_meninas_db.json';
+const DB_KEY      = 'curvaGirls_db';   // fallback localStorage
+
+let _currentKey = null;
+let _unsaved    = false;
+let _driveToken = null;
+let _driveFileId = null;
+let _driveDB    = {};   // cache em memória do banco do Drive
+
+// ── localStorage fallback ──
+function loadDB()      { try { return JSON.parse(localStorage.getItem(DB_KEY) || '{}'); } catch(e) { return {}; } }
+function saveDB(db)    { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function activeDB()    { return _driveToken ? _driveDB : loadDB(); }
+
+// ── UI helpers ──
+function markUnsaved() {
+  _unsaved = true;
+  const u = document.getElementById('unsavedBadge');
+  if (u) u.style.display = _currentKey ? 'inline' : 'none';
+}
+function flashSaved() {
+  _unsaved = false;
+  const s = document.getElementById('savedBadge');
+  const u = document.getElementById('unsavedBadge');
+  if (u) u.style.display = 'none';
+  if (s) { s.style.display = 'inline'; clearTimeout(s._t); s._t = setTimeout(() => s.style.display = 'none', 2500); }
+}
+function setDriveStatus(msg, cls) {
+  const el = document.getElementById('driveStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'drive-status ' + (cls || '');
+}
+
+// ══════════════════════════════════════════════
+// GOOGLE DRIVE — OAuth2 (implicit flow via GIS)
+// ══════════════════════════════════════════════
+
+let _tokenClient = null;
+
+function initGoogleDrive() {
+  if (typeof google === 'undefined') {
+    setTimeout(initGoogleDrive, 500);
+    return;
+  }
+  _tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (resp) => {
+      if (resp.error) { setDriveStatus('erro de autenticação', 'error'); return; }
+      _driveToken = resp.access_token;
+      document.getElementById('btnDriveLogin').textContent = '✓ Drive conectado';
+      document.getElementById('btnDriveLogin').disabled = true;
+      setDriveStatus('conectando...', '');
+      await driveLoadDB();
+    }
+  });
+}
+
+function driveSignIn() {
+  if (!_tokenClient) { alert('API Google ainda carregando, tente em instantes.'); return; }
+  _tokenClient.requestAccessToken();
+}
+
+// ── Fetch helper ──
+async function driveFetch(url, opts = {}) {
+  opts.headers = opts.headers || {};
+  opts.headers['Authorization'] = 'Bearer ' + _driveToken;
+  const r = await fetch(url, opts);
+  if (r.status === 401) { _driveToken = null; setDriveStatus('sessão expirada — reconecte', 'error'); return null; }
+  return r;
+}
+
+// ── Carrega o banco JSON do appDataFolder no Drive ──
+async function driveLoadDB() {
+  setDriveStatus('carregando...', '');
+  try {
+    // Lista arquivos no appDataFolder com o nome certo
+    const list = await driveFetch(
+      `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${DB_FILENAME}'&fields=files(id,name)`
+    );
+    if (!list) return;
+    const data = await list.json();
+    if (data.files && data.files.length > 0) {
+      _driveFileId = data.files[0].id;
+      const dl = await driveFetch(
+        `https://www.googleapis.com/drive/v3/files/${_driveFileId}?alt=media`
+      );
+      if (!dl) return;
+      _driveDB = await dl.json();
+    } else {
+      _driveDB = {};   // primeira vez — banco vazio
+    }
+    // Sincroniza localStorage como cópia local
+    saveDB(_driveDB);
+    const n = Object.keys(_driveDB).length;
+    setDriveStatus(`${n} paciente${n!==1?'s':''} no Drive`, 'connected');
+    // Recarrega sugestões
+  } catch(e) {
+    setDriveStatus('erro ao carregar', 'error');
+    console.error(e);
+  }
+}
+
+// ── Salva o banco inteiro de volta ao Drive ──
+async function driveSaveDB(db) {
+  const body = JSON.stringify(db);
+  try {
+    let r;
+    if (_driveFileId) {
+      // Atualiza arquivo existente
+      r = await driveFetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${_driveFileId}?uploadType=media`,
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body }
+      );
+    } else {
+      // Cria arquivo novo no appDataFolder
+      const meta = JSON.stringify({ name: DB_FILENAME, parents: ['appDataFolder'] });
+      const form = new FormData();
+      form.append('metadata', new Blob([meta], { type: 'application/json' }));
+      form.append('file',     new Blob([body],  { type: 'application/json' }));
+      r = await driveFetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+        { method: 'POST', body: form }
+      );
+      if (r) { const d = await r.json(); _driveFileId = d.id; }
+      return; // multipart já consumiu o body
+    }
+    if (!r) return;
+    const n = Object.keys(db).length;
+    setDriveStatus(`${n} paciente${n!==1?'s':''} no Drive`, 'connected');
+  } catch(e) {
+    setDriveStatus('erro ao salvar', 'error');
+    console.error(e);
+  }
+}
+
+// ══════════════════════════════════════════════
+// BUSCA E NAVEGAÇÃO DE PACIENTES
+// ══════════════════════════════════════════════
+
+function onSearchInput() {
+  const val = document.getElementById('searchInput').value.trim().toLowerCase();
+  const list = document.getElementById('searchSuggestions');
+  list.innerHTML = '';
+  if (!val) { list.style.display = 'none'; return; }
+  const db = activeDB();
+  const matches = Object.keys(db).filter(k => k.toLowerCase().includes(val)).slice(0, 8);
+  if (!matches.length) { list.style.display = 'none'; return; }
+  matches.forEach(k => {
+    const li = document.createElement('li');
+    li.textContent = k;
+    li.onclick = () => {
+      document.getElementById('searchInput').value = k;
+      list.style.display = 'none';
+      searchPatient();
+    };
+    list.appendChild(li);
+  });
+  list.style.display = 'block';
+}
+
+function searchPatient() {
+  const val = document.getElementById('searchInput').value.trim();
+  document.getElementById('searchSuggestions').style.display = 'none';
+  if (!val) { alert('Digite o nome ou ID da paciente.'); return; }
+  const db  = activeDB();
+  const rec = db[val];
+  if (!rec) {
+    if (confirm(`Paciente "${val}" não encontrada. Criar nova ficha?`)) {
+      _currentKey = val;
+      newPatientSilent();
+      document.getElementById('lbl').value = val;
+    }
+    return;
+  }
+  _currentKey = val;
+  _loadRecord(rec, val);
+}
+
+function _loadRecord(rec, key) {
+  points       = rec.points.map(p => ({...p}));
+  patients     = {};
+  patientOrder = [];
+  points.forEach(p => getPatientColor(p.label));
+  if (rec.dob) document.getElementById('dob').value = rec.dob;
+  document.getElementById('lbl').value  = key;
+  document.getElementById('searchInput').value = key;
+  rebuildPointDatasets();
+  renderTable();
+  _unsaved = false;
+  document.getElementById('unsavedBadge').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════
+// SALVAR / APAGAR / NOVO
+// ══════════════════════════════════════════════
+
+async function savePatient() {
+  const lbl = document.getElementById('lbl').value.trim();
+  const key = lbl || _currentKey;
+  if (!key) { alert('Preencha o nome/ID da paciente antes de salvar.'); return; }
+  if (points.length === 0) { alert('Nenhum ponto marcado para salvar.'); return; }
+  _currentKey = key;
+  document.getElementById('searchInput').value = key;
+
+  const rec = { dob: document.getElementById('dob').value, points: points.map(p => ({...p})) };
+
+  if (_driveToken) {
+    // Salva no Drive
+    _driveDB[key] = rec;
+    saveDB(_driveDB);  // atualiza cópia local também
+    await driveSaveDB(_driveDB);
+  } else {
+    // Fallback: só localStorage
+    const db = loadDB();
+    db[key] = rec;
+    saveDB(db);
+  }
+  flashSaved();
+}
+
+function deletePatient() {
+  const key = _currentKey || document.getElementById('searchInput').value.trim();
+  if (!key) { alert('Nenhuma paciente carregada para apagar.'); return; }
+  if (!confirm(`Apagar todos os dados de "${key}"? Esta ação não pode ser desfeita.`)) return;
+
+  if (_driveToken) {
+    delete _driveDB[key];
+    saveDB(_driveDB);
+    driveSaveDB(_driveDB);
+  } else {
+    const db = loadDB(); delete db[key]; saveDB(db);
+  }
+  newPatient();
+}
+
+function newPatient() {
+  if (_unsaved && points.length > 0) {
+    if (!confirm('Há dados não salvos. Deseja descartar e iniciar nova paciente?')) return;
+  }
+  newPatientSilent();
+}
+
+function newPatientSilent() {
+  points = []; patients = {}; patientOrder = [];
+  _currentKey = null; _unsaved = false;
+  chart.data.datasets.splice(7);
+  chart.update();
+  renderTable();
+  document.getElementById('dob').value       = '';
+  document.getElementById('lbl').value       = '';
+  document.getElementById('ht').value        = '';
+  document.getElementById('boneage').value   = '';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('unsavedBadge').style.display = 'none';
+  document.getElementById('savedBadge').style.display   = 'none';
+  updateBP();
+}
+
+// ══════════════════════════════════════════════
+// BACKUP / RESTAURAR (JSON local — fallback)
+// ══════════════════════════════════════════════
+
+function exportData() {
+  const db = _driveToken ? _driveDB : loadDB();
+  if (!Object.keys(db).length) { alert('Nenhum dado salvo para exportar.'); return; }
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'curva_meninas_backup.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      let count = 0;
+      if (_driveToken) {
+        Object.entries(imported).forEach(([k, v]) => { _driveDB[k] = v; count++; });
+        saveDB(_driveDB);
+        await driveSaveDB(_driveDB);
+      } else {
+        const db = loadDB();
+        Object.entries(imported).forEach(([k, v]) => { db[k] = v; count++; });
+        saveDB(db);
+      }
+      alert(`${count} paciente(s) importada(s)! Use o campo de busca para carregar.`);
+    } catch(err) { alert('Erro ao importar: arquivo inválido.'); }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ── INIT ──
+window.addEventListener('load', () => {
+  initGoogleDrive();
+});
+
+// Fecha sugestões ao clicar fora
+document.addEventListener('click', e => {
+  if (!e.target.closest('#searchInput') && !e.target.closest('#searchSuggestions'))
+    document.getElementById('searchSuggestions').style.display = 'none';
+});
+
 </script>
 </body>
 </html>
