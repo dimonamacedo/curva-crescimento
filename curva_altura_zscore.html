@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<title>Curva de Crescimento – OMS 5 a 19 anos</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    padding: 20px;
+  }
+
+  .page {
+    background: white;
+    width: 297mm;
+    min-height: 210mm;
+    margin: 0 auto;
+    padding: 10mm 10mm 8mm 10mm;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+
+  /* ── FORMULÁRIO ── */
+  .form-panel {
+    background: #f7f0f7;
+    border: 1px solid #d8a8d8;
+    border-radius: 6px;
+    padding: 10px 14px 8px;
+    margin-bottom: 10px;
+  }
+  .form-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .form-row + .form-row {
+    padding-top: 6px;
+    border-top: 1px dashed #d0b0d0;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+  .form-panel label {
+    font-size: 11px;
+    color: #555;
+    margin-bottom: 3px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .form-panel input[type="date"],
+  .form-panel input[type="number"],
+  .form-panel input[type="text"] {
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 13px;
+  }
+  input#refdate { width: 145px; background: #fffbe6; border-color: #c9a800; }
+  input#dob     { width: 145px; }
+  input#ht      { width: 100px; }
+  input#lbl     { width: 160px; }
+  .form-panel button {
+    background: #d63384;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: bold;
+    align-self: flex-end;
+  }
+  .form-panel button:hover { background: #b5206e; }
+  .btn-clear {
+    background: #888 !important;
+  }
+  .btn-clear:hover { background: #555 !important; }
+  .form-hint {
+    font-size: 11px;
+    color: #888;
+    align-self: flex-end;
+    padding-bottom: 6px;
+  }
+  #error-msg {
+    font-size: 12px;
+    color: #c0392b;
+    min-height: 16px;
+    margin-top: 4px;
+  }
+  .bp-result {
+    background: #eaf4ea;
+    border: 1px solid #7bba7b;
+    border-radius: 5px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: #1a5c1a;
+    line-height: 1.6;
+    margin-top: 6px;
+    display: inline-block;
+  }
+  .bp-result strong { font-size: 15px; }
+  .bp-result.empty { background:#f5f5f5; border-color:#ccc; color:#999; font-style:italic; }
+
+  /* ── CABEÇALHO DO GRÁFICO ── */
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2px;
+  }
+  .chart-title {
+    font-size: 22px;
+    color: #c060c0;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .chart-subtitle {
+    font-size: 13px;
+    color: #333;
+    margin-top: 2px;
+  }
+  .who-logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .who-logo-circle {
+    width: 44px;
+    height: 44px;
+  }
+  .who-logo-text {
+    text-align: right;
+    font-size: 11px;
+    line-height: 1.3;
+    color: #333;
+  }
+
+  /* ── WRAPPER DO GRÁFICO ── */
+  .chart-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  canvas#whoChart {
+    display: block;
+    width: 100% !important;
+  }
+
+  /* ── LISTA DE PONTOS ── */
+  .points-list {
+    margin-top: 8px;
+    font-size: 11px;
+  }
+  .points-list table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .points-list th {
+    background: #e0a0e0;
+    padding: 3px 8px;
+    text-align: left;
+    font-size: 11px;
+    border: 1px solid #ccc;
+  }
+  .points-list td {
+    padding: 3px 8px;
+    border: 1px solid #ddd;
+    font-size: 11px;
+  }
+  .dot-preview {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+    border: 1.5px solid white;
+    outline: 1px solid rgba(0,0,0,0.3);
+  }
+  .btn-del {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    font-size: 14px;
+    padding: 0 2px;
+  }
+  .btn-del:hover { color: #c0392b; }
+
+  .footer-ref {
+    font-size: 10px;
+    color: #666;
+    text-align: right;
+    margin-top: 4px;
+  }
+
+
+  /* ── ABAS ── */
+  .tab-bar {
+    display: flex; gap: 0; margin-bottom: 10px;
+    border-bottom: 3px solid #d63384;
+  }
+  .tab-btn {
+    padding: 8px 28px; font-size: 14px; font-weight: bold;
+    border: none; cursor: pointer; background: #f0f0f0; color: #666;
+    border-radius: 6px 6px 0 0; margin-right: 4px; transition: background 0.15s;
+  }
+  .tab-btn.active-girl  { background: #d63384; color: white; }
+  .tab-btn.active-boy   { background: #1565C0; color: white; }
+  .tab-btn:not(.active-girl):not(.active-boy):hover { background: #ddd; }
+  /* ── GERENCIADOR DE PACIENTES ── */
+  .patient-panel {
+    background: #f0f7ff;
+    border: 1px solid #a8c8e8;
+    border-radius: 6px;
+    padding: 10px 14px 8px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .patient-panel label {
+    font-size: 11px; color: #336; font-weight: bold;
+    text-transform: uppercase; letter-spacing: 0.03em;
+    display: block; margin-bottom: 3px;
+  }
+  .patient-panel input, .patient-panel select {
+    border: 1px solid #99b; border-radius: 4px;
+    padding: 5px 8px; font-size: 13px;
+  }
+  .patient-panel button {
+    background: #2a6099; color: white; border: none;
+    border-radius: 4px; padding: 7px 13px; font-size: 13px;
+    cursor: pointer; font-weight: bold; align-self: flex-end;
+  }
+  .patient-panel button:hover { background: #1a4070; }
+  .btn-export { background: #5a7a2a !important; }
+  .btn-export:hover { background: #3a5a10 !important; }
+  .btn-import { background: #7a4a2a !important; }
+  .btn-import:hover { background: #5a3010 !important; }
+  .btn-newpt  { background: #2a6099 !important; }
+  .btn-save   { background: #1a7a1a !important; }
+  .btn-save:hover { background: #0f5a0f !important; }
+  .btn-drive  { background: #1a73e8 !important; }
+  .btn-drive:hover { background: #1557b0 !important; }
+  .drive-status {
+    font-size: 11px; padding: 3px 10px; border-radius: 3px;
+    border: 1px solid #ccc; background: #f8f8f8; color: #555;
+    align-self: flex-end; white-space: nowrap;
+  }
+  .drive-status.connected { background: #e8f5e9; border-color: #81c784; color: #2e7d32; }
+  .drive-status.error     { background: #fdecea; border-color: #e57373; color: #c62828; }
+  .btn-save:hover { background: #0f5a0f !important; }
+  .btn-delpt  { background: #992222 !important; }
+  .btn-delpt:hover  { background: #660000 !important; }
+  .saved-badge {
+    font-size: 11px; color: #3a7a3a; background: #d8f0d8;
+    border: 1px solid #9ac89a; border-radius: 3px;
+    padding: 2px 8px; margin-left: 6px; display: none;
+  }
+  .unsaved-badge {
+    font-size: 11px; color: #996600; background: #fff5cc;
+    border: 1px solid #ddaa44; border-radius: 3px;
+    padding: 2px 8px; margin-left: 4px; display: none;
+  }
+
+  .search-wrap { position: relative; }
+  #searchSuggestions {
+    display: none; position: absolute; top: 100%; left: 0; z-index: 999;
+    background: white; border: 1px solid #99b; border-radius: 0 0 4px 4px;
+    min-width: 200px; max-height: 200px; overflow-y: auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  }
+  #searchSuggestions li {
+    list-style: none; padding: 7px 12px; cursor: pointer; font-size: 13px;
+  }
+  #searchSuggestions li:hover { background: #e8f0ff; }
+
+  .vel-section {
+    margin-top: 10px;
+    background: #f0f7ff;
+    border: 1px solid #a8c8e8;
+    border-radius: 5px;
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+  .vel-section strong { font-size: 13px; }
+  .vel-title { font-size: 11px; font-weight: bold; text-transform: uppercase;
+    color: #336; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .vel-grid { display: flex; gap: 20px; flex-wrap: wrap; }
+  .vel-item { display: flex; flex-direction: column; gap: 2px; }
+  .vel-label { font-size: 10px; color: #557; }
+  .vel-value { font-size: 14px; font-weight: bold; color: #1a3a6a; }
+  .vel-sub   { font-size: 10px; color: #779; }
+
+  @media print {
+    .patient-panel { display: none; }
+  }
+  @media print {
+    body { background: white; padding: 0; }
+    .page { box-shadow: none; width: 100%; padding: 8mm; }
+    .form-panel { display: none; }
+    .btn-del { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Abas -->
+  <div class="tab-bar" id="tabBar">
+    <button class="tab-btn active-girl" id="tabGirl" onclick="switchSex('girl')">♀ Meninas</button>
+    <button class="tab-btn" id="tabBoy"  onclick="switchSex('boy')">♂ Meninos</button>
+  </div>
+
+  <!-- Gerenciador de Pacientes -->
+  <div class="patient-panel" id="patientPanel">
+    <div class="form-group">
+      <label>Buscar paciente</label>
+      <div class="search-wrap">
+        <input type="text" id="searchInput" placeholder="Digite nome ou ID..." style="width:200px"
+               oninput="onSearchInput()" onkeydown="if(event.key==='Enter')searchPatient()">
+        <ul id="searchSuggestions"></ul>
+      </div>
+    </div>
+    <button class="btn-newpt" onclick="searchPatient()" title="Buscar e carregar paciente">🔍 Carregar</button>
+    <button class="btn-newpt" onclick="newPatient()" title="Limpar gráfico para nova paciente">＋ Nova paciente</button>
+    <button class="btn-save"  onclick="savePatient()" title="Salvar dados da paciente atual">💾 Salvar</button>
+    <button class="btn-delpt" onclick="deletePatient()" title="Apagar paciente">🗑 Apagar</button>
+    <div style="flex:1"></div>
+    <button class="btn-drive" onclick="driveSignIn()" id="btnDriveLogin" title="Conectar ao Google Drive">
+      <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px;margin-right:4px"><path fill="white" d="M4.56 13.32L1.44 8l3.12-5.32h6.24L13.92 8l-3.12 5.32zm6.36 5.36L8.76 15h6.48l2.16 3.68zm8.64-5.36h-6.24L10.2 8l3.12-5.32h.12L22.56 8z"/></svg>Drive
+    </button>
+    <span class="drive-status" id="driveStatus">não conectado</span>
+    <button class="btn-export" onclick="exportData()">⬇ Backup</button>
+    <button class="btn-import" onclick="document.getElementById('importFile').click()">⬆ Restaurar</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    <span class="saved-badge" id="savedBadge">✓ Salvo no Drive</span>
+    <span class="unsaved-badge" id="unsavedBadge">● não salvo</span>
+  </div>
+
+  <!-- Formulário -->
+  <div class="form-panel" id="formPanel">
+    <!-- Linha 1: data da consulta -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>📅 Data da consulta</label>
+        <input type="date" id="refdate">
+      </div>
+      <span class="form-hint">← Ajuste se necessário (padrão: hoje)</span>
+    </div>
+    <!-- Linha 2: dados da paciente -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data de nascimento</label>
+        <input type="date" id="dob">
+      </div>
+      <div class="form-group">
+        <label>Paciente / ID</label>
+        <input type="text" id="lbl" placeholder="Nome ou código">
+      </div>
+      <div class="form-group">
+        <label>Altura (cm)</label>
+        <input type="number" id="ht" min="60" max="200" step="0.1" placeholder="ex: 132.5" oninput="updateBP()">
+      </div>
+      <div class="form-group">
+        <label>Idade óssea (anos) <span style="font-weight:normal;color:#888">opcional</span></label>
+        <input type="number" id="boneage" min="1" max="19" step="0.1" placeholder="ex: 10.5" style="width:110px" oninput="updateBP()">
+      </div>
+      <div class="form-group">
+        <label>Maturação óssea</label>
+        <select id="maturation" style="width:110px;border:1px solid #bbb;border-radius:4px;padding:5px 6px;font-size:13px;" onchange="updateBP()">
+          <option value="normal">Normal</option>
+          <option value="atrasada">Atrasada</option>
+          <option value="avancada">Avançada</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Previsão Bayley-Pinneau</label>
+        <div class="bp-result empty" id="bpResult">preencha altura e I.O.</div>
+      </div>
+      <button onclick="addPoint()">＋ Marcar no gráfico</button>
+      <button class="btn-clear" onclick="clearAll()">Limpar tudo</button>
+    </div>
+    <!-- Linha 3: altura alvo -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Estatura pai (cm) <span style="font-weight:normal;color:#888">opcional</span></label>
+        <input type="number" id="fatherHt" min="100" max="220" step="0.1" placeholder="ex: 175.0" style="width:120px" oninput="calcTargetHeight()">
+      </div>
+      <div class="form-group">
+        <label>Estatura mãe (cm) <span style="font-weight:normal;color:#888">opcional</span></label>
+        <input type="number" id="motherHt" min="100" max="220" step="0.1" placeholder="ex: 162.0" style="width:120px" oninput="calcTargetHeight()">
+      </div>
+      <div class="form-group">
+        <label>Altura alvo (cm) <span style="font-weight:normal;color:#888">± 5 cm</span></label>
+        <input type="number" id="targetHt" min="100" max="220" step="0.1" placeholder="calculado ou manual" style="width:140px" oninput="updateTargetBand()">
+      </div>
+      <button onclick="applyTargetHeight()" style="background:#7b2d8b">🎯 Mostrar alvo no gráfico</button>
+      <button onclick="clearTargetHeight()" style="background:#888;color:white;border:none;border-radius:4px;padding:7px 12px;font-size:13px;cursor:pointer">✕ Remover alvo</button>
+    </div>
+    <div id="error-msg"></div>
+  </div>
+
+  <!-- Cabeçalho -->
+  <div class="chart-header">
+    <div>
+      <div class="chart-title" id="chartTitle">Height-for-age &nbsp; GIRLS</div>
+      <div class="chart-subtitle" id="chartSubtitle">5 to 19 years (z-scores)</div>
+    </div>
+    <div class="who-logo">
+      <!-- WHO emblem SVG simplificado -->
+      <svg class="who-logo-circle" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="48" fill="none" stroke="#00529b" stroke-width="4"/>
+        <ellipse cx="50" cy="50" rx="48" ry="22" fill="none" stroke="#00529b" stroke-width="2.5"/>
+        <ellipse cx="50" cy="50" rx="20" ry="48" fill="none" stroke="#00529b" stroke-width="2.5"/>
+        <line x1="2" y1="50" x2="98" y2="50" stroke="#00529b" stroke-width="2.5"/>
+        <rect x="44" y="10" width="12" height="30" rx="2" fill="#00529b"/>
+        <rect x="38" y="22" width="24" height="8" rx="2" fill="#00529b"/>
+      </svg>
+      <div class="who-logo-text"><strong>World Health</strong><br>Organization</div>
+    </div>
+  </div>
+
+  <!-- Canvas do gráfico -->
+  <div class="chart-wrapper">
+    <canvas id="whoChart"></canvas>
+  </div>
+
+  <div class="footer-ref">2007 WHO Reference</div>
+  <div id="symbolLegend" style="display:none; font-size:11px; color:#444; margin-top:4px; display:flex; gap:20px; flex-wrap:wrap;">
+    <span><svg width="14" height="14" style="vertical-align:middle;margin-right:3px"><circle cx="7" cy="7" r="6" fill="#1565C0" stroke="white" stroke-width="1.5"/></svg> Bolinha = Idade cronológica</span>
+    <span><svg width="14" height="14" style="vertical-align:middle;margin-right:3px"><line x1="1" y1="1" x2="13" y2="13" stroke="#1565C0" stroke-width="2.5"/><line x1="13" y1="1" x2="1" y2="13" stroke="#1565C0" stroke-width="2.5"/></svg> X = Idade óssea</span>
+  </div>
+
+  <!-- Tabela de pontos -->
+  <div class="points-list" id="ptsList" style="display:none">
+    <table>
+      <thead>
+        <tr>
+          <th>Paciente</th>
+          <th>Data consulta</th>
+          <th>Data nasc.</th>
+          <th>Idade cronológica</th>
+          <th>Idade óssea</th>
+          <th>Maturação</th>
+          <th>Altura (cm)</th>
+          <th>Z-score (ic)</th>
+          <th>Z-score (io)</th>
+          <th>Prev. estatura (BP)</th>
+          <th>Velocidade crescimento</th>
+          <th class="no-print"></th>
+        </tr>
+      </thead>
+      <tbody id="ptsTbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Velocidade de Crescimento -->
+  <div class="vel-section" id="velSection" style="display:none">
+    <div class="vel-title">📏 Velocidade de Crescimento</div>
+    <div class="vel-grid" id="velGrid"></div>
+  </div>
+
+</div><!-- .page -->
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── DADOS OMS (meses 61–228, colunas: Z+3, Z+2, Z+1, Z0, Z-1, Z-2, Z-3) ──
+const RAW = [
+[61,123.9,119.1,114.4,109.6,104.8,100.1,95.3],[62,124.5,119.7,114.9,110.1,105.3,100.5,95.7],
+[63,125.2,120.3,115.5,110.6,105.8,101.0,96.1],[64,125.8,120.9,116.0,111.2,106.3,101.4,96.5],
+[65,126.4,121.5,116.6,111.7,106.8,101.9,97.0],[66,127.0,122.0,117.1,112.2,107.2,102.3,97.4],
+[67,127.6,122.6,117.6,112.7,107.7,102.7,97.8],[68,128.2,123.2,118.2,113.2,108.2,103.2,98.2],
+[69,128.8,123.7,118.7,113.7,108.6,103.6,98.6],[70,129.3,124.3,119.2,114.2,109.1,104.0,99.0],
+[71,129.9,124.8,119.7,114.6,109.6,104.5,99.4],[72,130.5,125.4,120.2,115.1,110.0,104.9,99.8],
+[73,131.1,125.9,120.8,115.6,110.5,105.3,100.2],[74,131.6,126.4,121.3,116.1,110.9,105.7,100.5],
+[75,132.2,127.0,121.8,116.6,111.3,106.1,100.9],[76,132.7,127.5,122.3,117.0,111.8,106.6,101.3],
+[77,133.3,128.0,122.8,117.5,112.2,107.0,101.7],[78,133.9,128.6,123.3,118.0,112.7,107.4,102.1],
+[79,134.4,129.1,123.8,118.4,113.1,107.8,102.5],[80,135.0,129.6,124.3,118.9,113.6,108.2,102.9],
+[81,135.5,130.2,124.8,119.4,114.0,108.6,103.2],[82,136.1,130.7,125.3,119.9,114.5,109.0,103.6],
+[83,136.7,131.2,125.8,120.3,114.9,109.5,104.0],[84,137.2,131.7,126.3,120.8,115.3,109.9,104.4],
+[85,137.8,132.3,126.8,121.3,115.8,110.3,104.8],[86,138.3,132.8,127.3,121.8,116.2,110.7,105.2],
+[87,138.9,133.3,127.8,122.2,116.7,111.1,105.6],[88,139.4,133.9,128.3,122.7,117.1,111.6,106.0],
+[89,140.0,134.4,128.8,123.2,117.6,112.0,106.4],[90,140.6,134.9,129.3,123.7,118.0,112.4,106.8],
+[91,141.1,135.5,129.8,124.1,118.5,112.8,107.2],[92,141.7,136.0,130.3,124.6,118.9,113.2,107.6],
+[93,142.3,136.5,130.8,125.1,119.4,113.7,108.0],[94,142.8,137.1,131.3,125.6,119.8,114.1,108.4],
+[95,143.4,137.6,131.8,126.1,120.3,114.5,108.8],[96,143.9,138.2,132.4,126.6,120.8,115.0,109.2],
+[97,144.5,138.7,132.9,127.0,121.2,115.4,109.6],[98,145.1,139.2,133.4,127.5,121.7,115.8,110.0],
+[99,145.7,139.8,133.9,128.0,122.1,116.3,110.4],[100,146.2,140.3,134.4,128.5,122.6,116.7,110.8],
+[101,146.8,140.9,134.9,129.0,123.1,117.1,111.2],[102,147.4,141.4,135.5,129.5,123.5,117.6,111.6],
+[103,147.9,142.0,136.0,130.0,124.0,118.0,112.0],[104,148.5,142.5,136.5,130.5,124.5,118.5,112.5],
+[105,149.1,143.1,137.0,131.0,125.0,118.9,112.9],[106,149.7,143.6,137.5,131.5,125.4,119.4,113.3],
+[107,150.2,144.2,138.1,132.0,125.9,119.8,113.7],[108,150.8,144.7,138.6,132.5,126.4,120.3,114.2],
+[109,151.4,145.3,139.1,133.0,126.9,120.7,114.6],[110,152.0,145.8,139.7,133.5,127.3,121.2,115.0],
+[111,152.6,146.4,140.2,134.0,127.8,121.6,115.5],[112,153.1,146.9,140.7,134.5,128.3,122.1,115.9],
+[113,153.7,147.5,141.3,135.0,128.8,122.6,116.3],[114,154.3,148.1,141.8,135.5,129.3,123.0,116.8],
+[115,154.9,148.6,142.3,136.1,129.8,123.5,117.2],[116,155.5,149.2,142.9,136.6,130.3,124.0,117.7],
+[117,156.1,149.7,143.4,137.1,130.8,124.4,118.1],[118,156.7,150.3,144.0,137.6,131.2,124.9,118.5],
+[119,157.2,150.9,144.5,138.1,131.7,125.4,119.0],[120,157.8,151.4,145.0,138.6,132.2,125.8,119.4],
+[121,158.4,152.0,145.6,139.2,132.7,126.3,119.9],[122,159.0,152.6,146.1,139.7,133.2,126.8,120.4],
+[123,159.6,153.1,146.7,140.2,133.7,127.3,120.8],[124,160.2,153.7,147.2,140.7,134.2,127.8,121.3],
+[125,160.8,154.3,147.8,141.3,134.8,128.2,121.7],[126,161.4,154.8,148.3,141.8,135.3,128.7,122.2],
+[127,162.0,155.4,148.9,142.3,135.8,129.2,122.7],[128,162.6,156.0,149.4,142.9,136.3,129.7,123.2],
+[129,163.1,156.6,150.0,143.4,136.8,130.2,123.6],[130,163.7,157.1,150.5,143.9,137.3,130.7,124.1],
+[131,164.3,157.7,151.1,144.5,137.8,131.2,124.6],[132,164.9,158.3,151.6,145.0,138.3,131.7,125.1],
+[133,165.5,158.9,152.2,145.5,138.9,132.2,125.5],[134,166.1,159.4,152.7,146.1,139.4,132.7,126.0],
+[135,166.7,160.0,153.3,146.6,139.9,133.2,126.5],[136,167.3,160.6,153.8,147.1,140.4,133.7,127.0],
+[137,167.9,161.1,154.4,147.7,140.9,134.2,127.4],[138,168.4,161.7,154.9,148.2,141.4,134.7,127.9],
+[139,169.0,162.2,155.5,148.7,141.9,135.2,128.4],[140,169.6,162.8,156.0,149.2,142.4,135.7,128.9],
+[141,170.1,163.3,156.5,149.7,142.9,136.1,129.3],[142,170.7,163.9,157.1,150.2,143.4,136.6,129.8],
+[143,171.2,164.4,157.6,150.7,143.9,137.1,130.3],[144,171.8,164.9,158.1,151.2,144.4,137.6,130.7],
+[145,172.3,165.4,158.6,151.7,144.9,138.0,131.2],[146,172.8,165.9,159.1,152.2,145.3,138.5,131.6],
+[147,173.3,166.4,159.5,152.7,145.8,138.9,132.0],[148,173.8,166.9,160.0,153.1,146.2,139.3,132.5],
+[149,174.3,167.4,160.5,153.6,146.7,139.8,132.9],[150,174.7,167.8,160.9,154.0,147.1,140.2,133.3],
+[151,175.2,168.3,161.3,154.4,147.5,140.6,133.7],[152,175.6,168.7,161.8,154.8,147.9,141.0,134.1],
+[153,176.0,169.1,162.2,155.2,148.3,141.4,134.5],[154,176.4,169.5,162.6,155.6,148.7,141.8,134.8],
+[155,176.8,169.9,162.9,156.0,149.1,142.1,135.2],[156,177.2,170.3,163.3,156.4,149.4,142.5,135.6],
+[157,177.6,170.6,163.7,156.7,149.8,142.8,135.9],[158,177.9,171.0,164.0,157.1,150.1,143.2,136.2],
+[159,178.2,171.3,164.3,157.4,150.4,143.5,136.5],[160,178.6,171.6,164.7,157.7,150.8,143.8,136.9],
+[161,178.9,171.9,165.0,158.0,151.1,144.1,137.2],[162,179.2,172.2,165.3,158.3,151.3,144.4,137.4],
+[163,179.4,172.5,165.5,158.6,151.6,144.7,137.7],[164,179.7,172.7,165.8,158.8,151.9,144.9,138.0],
+[165,179.9,173.0,166.0,159.1,152.1,145.2,138.2],[166,180.2,173.2,166.3,159.3,152.4,145.4,138.5],
+[167,180.4,173.5,166.5,159.6,152.6,145.7,138.7],[168,180.6,173.7,166.7,159.8,152.8,145.9,139.0],
+[169,180.8,173.9,166.9,160.0,153.1,146.1,139.2],[170,181.0,174.1,167.1,160.2,153.3,146.3,139.4],
+[171,181.2,174.2,167.3,160.4,153.5,146.5,139.6],[172,181.3,174.4,167.5,160.6,153.6,146.7,139.8],
+[173,181.5,174.6,167.7,160.7,153.8,146.9,140.0],[174,181.6,174.7,167.8,160.9,153.9,147.1,140.1],
+[175,181.8,174.9,168.0,161.0,154.1,147.2,140.3],[176,181.9,175.0,168.1,161.2,154.2,147.4,140.5],
+[177,182.0,175.1,168.2,161.3,154.4,147.5,140.6],[178,182.1,175.2,168.3,161.4,154.5,147.7,140.8],
+[179,182.2,175.3,168.4,161.6,154.7,147.8,140.9],[180,182.3,175.4,168.5,161.7,154.8,147.9,141.0],
+[181,182.4,175.5,168.6,161.8,154.9,148.0,141.2],[182,182.5,175.6,168.7,161.9,155.0,148.1,141.3],
+[183,182.5,175.7,168.8,162.0,155.1,148.2,141.4],[184,182.6,175.7,168.9,162.0,155.2,148.3,141.5],
+[185,182.6,175.8,169.0,162.1,155.3,148.4,141.6],[186,182.7,175.9,169.0,162.2,155.4,148.5,141.7],
+[187,182.7,175.9,169.1,162.3,155.4,148.6,141.8],[188,182.8,176.0,169.1,162.3,155.5,148.7,141.9],
+[189,182.8,176.0,169.2,162.4,155.6,148.7,141.9],[190,182.8,176.0,169.2,162.4,155.6,148.8,142.0],
+[191,182.9,176.1,169.3,162.5,155.7,148.9,142.1],[192,182.9,176.1,169.3,162.5,155.7,148.9,142.2],
+[193,182.9,176.1,169.3,162.6,155.8,149.0,142.2],[194,182.9,176.1,169.4,162.6,155.8,149.1,142.3],
+[195,182.9,176.2,169.4,162.6,155.9,149.1,142.3],[196,182.9,176.2,169.4,162.7,155.9,149.2,142.4],
+[197,182.9,176.2,169.4,162.7,155.9,149.2,142.4],[198,182.9,176.2,169.5,162.7,156.0,149.2,142.5],
+[199,182.9,176.2,169.5,162.7,156.0,149.3,142.5],[200,182.9,176.2,169.5,162.8,156.0,149.3,142.6],
+[201,182.9,176.2,169.5,162.8,156.1,149.4,142.6],[202,182.9,176.2,169.5,162.8,156.1,149.4,142.7],
+[203,182.9,176.2,169.5,162.8,156.1,149.4,142.7],[204,182.9,176.2,169.5,162.9,156.2,149.5,142.8],
+[205,182.9,176.2,169.6,162.9,156.2,149.5,142.8],[206,182.9,176.2,169.6,162.9,156.2,149.5,142.9],
+[207,182.9,176.3,169.6,162.9,156.2,149.6,142.9],[208,182.9,176.3,169.6,162.9,156.3,149.6,142.9],
+[209,182.9,176.3,169.6,162.9,156.3,149.6,143.0],[210,182.9,176.3,169.6,163.0,156.3,149.7,143.0],
+[211,182.9,176.3,169.6,163.0,156.3,149.7,143.1],[212,182.9,176.3,169.6,163.0,156.4,149.7,143.1],
+[213,182.9,176.3,169.6,163.0,156.4,149.8,143.1],[214,182.9,176.3,169.7,163.0,156.4,149.8,143.2],
+[215,182.9,176.3,169.7,163.0,156.4,149.8,143.2],[216,182.9,176.3,169.7,163.1,156.5,149.8,143.2],
+[217,182.9,176.3,169.7,163.1,156.5,149.9,143.3],[218,182.9,176.3,169.7,163.1,156.5,149.9,143.3],
+[219,182.9,176.3,169.7,163.1,156.5,149.9,143.3],[220,182.9,176.3,169.7,163.1,156.5,149.9,143.4],
+[221,182.9,176.3,169.7,163.1,156.5,150.0,143.4],[222,182.9,176.3,169.7,163.1,156.6,150.0,143.4],
+[223,182.8,176.3,169.7,163.1,156.6,150.0,143.4],[224,182.8,176.3,169.7,163.1,156.6,150.0,143.5],
+[225,182.8,176.3,169.7,163.1,156.6,150.0,143.5],[226,182.8,176.3,169.7,163.2,156.6,150.0,143.5],
+[227,182.8,176.2,169.7,163.2,156.6,150.1,143.5],[228,182.8,176.2,169.7,163.2,156.6,150.1,143.5]
+];
+
+const MONTHS = RAW.map(r=>r[0]);
+const Z = {
+  p3:  RAW.map(r=>({x:r[0],y:r[1]})),
+  p2:  RAW.map(r=>({x:r[0],y:r[2]})),
+  p1:  RAW.map(r=>({x:r[0],y:r[3]})),
+  z0:  RAW.map(r=>({x:r[0],y:r[4]})),
+  m1:  RAW.map(r=>({x:r[0],y:r[5]})),
+  m2:  RAW.map(r=>({x:r[0],y:r[6]})),
+  m3:  RAW.map(r=>({x:r[0],y:r[7]})),
+};
+
+// Cores fiéis ao original OMS
+const LINE_COLORS = {
+  p3: '#1a1a1a',   // preto
+  p2: '#cc2200',   // vermelho escuro
+  p1: '#e08000',   // laranja
+  z0: '#2e8b00',   // verde
+  m1: '#e08000',   // laranja
+  m2: '#cc2200',   // vermelho
+  m3: '#1a1a1a',   // preto
+};
+
+function interpolate(key, ageM) {
+  const idx = RAW.findIndex(r => r[0] === ageM);
+  if (idx !== -1) {
+    const col = {p3:1,p2:2,p1:3,z0:4,m1:5,m2:6,m3:7}[key];
+    return RAW[idx][col];
+  }
+  const lo = RAW.filter(r => r[0] < ageM).pop();
+  const hi = RAW.find(r => r[0] > ageM);
+  if (!lo || !hi) return null;
+  const col = {p3:1,p2:2,p1:3,z0:4,m1:5,m2:6,m3:7}[key];
+  const frac = (ageM - lo[0]) / (hi[0] - lo[0]);
+  return lo[col] + frac * (hi[col] - lo[col]);
+}
+
+function calcZ(ageM, ht) {
+  // Método correto OMS: interpolação por segmentos entre z-scores tabelados
+  // Referência: WHO Anthro Technical Notes - Child Growth Standards
+  const p3 = interpolate('p3', ageM);
+  const p2 = interpolate('p2', ageM);
+  const p1 = interpolate('p1', ageM);
+  const z0 = interpolate('z0', ageM);
+  const m1 = interpolate('m1', ageM);
+  const m2 = interpolate('m2', ageM);
+  const m3 = interpolate('m3', ageM);
+  if (z0 === null) return null;
+
+  let z;
+  if (ht >= z0) {
+    if      (ht <= p1) z =  (ht - z0) / (p1 - z0);
+    else if (ht <= p2) z = 1 + (ht - p1) / (p2 - p1);
+    else if (ht <= p3) z = 2 + (ht - p2) / (p3 - p2);
+    else               z = 3 + (ht - p3) / (p3 - p2);  // acima de Z+3
+  } else {
+    if      (ht >= m1) z = -(z0 - ht) / (z0 - m1);
+    else if (ht >= m2) z = -1 - (m1 - ht) / (m1 - m2);
+    else if (ht >= m3) z = -2 - (m2 - ht) / (m2 - m3);
+    else               z = -3 - (m3 - ht) / (m2 - m3); // abaixo de Z-3
+  }
+  return z.toFixed(2);
+}
+
+// Plugin customizado para labels Z no lado direito
+const zLabelPlugin = {
+  id: 'zLabels',
+  afterDraw(chart) {
+    const ctx = chart.ctx;
+    const xAxis = chart.scales.x;
+    const yAxis = chart.scales.y;
+
+    // Usa o RAW ativo (meninas ou meninos) para pegar os valores do último mês
+    const activeRAW = window.getActiveRAW ? window.getActiveRAW() : RAW;
+    const lastRow   = activeRAW[activeRAW.length - 1];
+    // lastRow = [mês, Z+3, Z+2, Z+1, Z0, Z-1, Z-2, Z-3]
+
+    const xPos = xAxis.getPixelForValue(lastRow[0]) + 6;
+
+    const labels = [
+      { col: 1, text: '3',  color: '#1a1a1a' },
+      { col: 2, text: '2',  color: '#cc2200' },
+      { col: 3, text: '1',  color: '#e08000' },
+      { col: 4, text: '0',  color: '#2e8b00' },
+      { col: 5, text: '-1', color: '#e08000' },
+      { col: 6, text: '-2', color: '#cc2200' },
+      { col: 7, text: '-3', color: '#1a1a1a' },
+    ];
+
+    labels.forEach(l => {
+      const yPos = yAxis.getPixelForValue(lastRow[l.col]);
+      ctx.save();
+      ctx.font = 'bold 11px Arial';
+      ctx.fillStyle = l.color;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(l.text, xPos, yPos);
+      ctx.restore();
+    });
+  }
+};
+
+// Desenhar fundo do gráfico como o OMS (borda magenta espessa)
+const bgPlugin = {
+  id: 'bgPlugin',
+  beforeDraw(chart) {
+    const ctx = chart.ctx;
+    const {left, top, right, bottom, width, height} = chart.chartArea;
+    // fundo branco da área
+    ctx.save();
+    ctx.fillStyle = 'white';
+    ctx.fillRect(left, top, width, height);
+    ctx.restore();
+  }
+};
+
+// Meses que marcam cada ano (3, 6, 9 dentro de cada ano)
+function buildXTicks() {
+  // Eixo: de 61 a 228 meses
+  // Linhas verticais em cada mês inteiro
+  return null;
+}
+
+const cfg = {
+  type: 'scatter',
+  data: {
+    datasets: [
+      mkLine('p3', 'Z +3', LINE_COLORS.p3, 2),
+      mkLine('p2', 'Z +2', LINE_COLORS.p2, 1.8),
+      mkLine('p1', 'Z +1', LINE_COLORS.p1, 1.8),
+      mkLine('z0', 'Z  0', LINE_COLORS.z0, 2.2),
+      mkLine('m1', 'Z -1', LINE_COLORS.m1, 1.8),
+      mkLine('m2', 'Z -2', LINE_COLORS.m2, 1.8),
+      mkLine('m3', 'Z -3', LINE_COLORS.m3, 2),
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    layout: { padding: { right: 28, top: 4, bottom: 2, left: 2 } },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label(ctx) {
+            if (ctx.dataset._pt) {
+              const n = ctx.dataset._name || '';
+              const mo = ctx.parsed.x;
+              const yr = Math.floor(mo/12);
+              const m  = mo % 12;
+              return `${n}: ${ctx.parsed.y} cm (${yr}a ${m}m)`;
+            }
+            return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} cm`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        min: 61,
+        max: 228,
+        border: { color: '#555' },
+        grid: {
+          color: (ctx) => {
+            const v = ctx.tick.value;
+            // linha mais forte a cada ano (múltiplo de 12 a partir de 60)
+            if ((v - 60) % 12 === 0) return 'rgba(0,0,0,0.25)';
+            return 'rgba(0,0,0,0.10)';
+          },
+          lineWidth: (ctx) => {
+            const v = ctx.tick.value;
+            if ((v - 60) % 12 === 0) return 1.2;
+            return 0.7;
+          },
+          drawTicks: false,
+        },
+        ticks: {
+          font: { size: 10, family: 'Arial' },
+          color: '#333',
+          maxRotation: 0,
+          // Mostrar: "3 6 9" para meses, e o número do ano embaixo
+          callback(val) {
+            const offset = val - 60; // meses desde 5 anos
+            if (offset % 12 === 3) return '3';
+            if (offset % 12 === 6) return '6';
+            if (offset % 12 === 9) return '9';
+            if (offset % 12 === 0 && val > 60) return '';
+            return '';
+          },
+          stepSize: 3,
+          autoSkip: false,
+        },
+        afterTickToLabelConversion(axis) {
+          // Adiciona labels de anos manualmente
+        },
+        title: {
+          display: true,
+          text: 'Age (completed months and years)',
+          font: { size: 12, family: 'Arial' },
+          color: '#222',
+          padding: { top: 22 }
+        }
+      },
+      y: {
+        min: 90,
+        max: 190,
+        border: { color: '#555' },
+        grid: {
+          color: (ctx) => {
+            if (ctx.tick.value % 10 === 0) return 'rgba(0,0,0,0.25)';
+            return 'rgba(0,0,0,0.10)';
+          },
+          lineWidth: (ctx) => ctx.tick.value % 10 === 0 ? 1.2 : 0.7,
+          drawTicks: false,
+        },
+        ticks: {
+          font: { size: 10, family: 'Arial' },
+          color: '#333',
+          stepSize: 2,
+          callback(v) { return Number.isInteger(v) && v % 10 === 0 ? v : ''; }
+        },
+        title: {
+          display: true,
+          text: 'Height (cm)',
+          font: { size: 12, family: 'Arial' },
+          color: '#222',
+        }
+      }
+    }
+  },
+  plugins: [zLabelPlugin, bgPlugin,
+    // Plugin para labels de ano no eixo X (segunda linha)
+    {
+      id: 'yearLabels',
+      afterDraw(chart) {
+        const ctx = chart.ctx;
+        const xAxis = chart.scales.x;
+        const yAxis = chart.scales.y;
+        const bottom = yAxis.bottom;
+
+        ctx.save();
+        ctx.font = '11px Arial';
+        ctx.fillStyle = '#222';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        // "Months" e "Years" labels à esquerda
+        const leftX = xAxis.left - 2;
+        ctx.textAlign = 'right';
+        ctx.font = 'bold 9px Arial';
+        ctx.fillText('Months', leftX, bottom + 4);
+        ctx.fillText('Years', leftX, bottom + 16);
+
+        // Anos: 5 a 19
+        ctx.font = '11px Arial';
+        ctx.textAlign = 'center';
+        for (let yr = 5; yr <= 19; yr++) {
+          const mo = yr * 12;
+          if (mo < 61 || mo > 228) continue;
+          const xPos = xAxis.getPixelForValue(mo);
+          ctx.fillText(String(yr), xPos, bottom + 16);
+        }
+
+        // "90" no canto inferior esquerdo (valor do eixo Y mínimo)
+        ctx.textAlign = 'right';
+        ctx.font = '10px Arial';
+        const y90 = yAxis.getPixelForValue(90);
+        ctx.fillText('90', xAxis.left - 4, y90 - 5);
+
+        ctx.restore();
+      }
+    },
+    // Faixa hachurada de altura alvo — converge para o alvo aos 19 anos
+    {
+      id: 'targetBand',
+      afterDraw(chart) {
+        if (!window._targetHt) return;
+        const ctx    = chart.ctx;
+        const xAxis  = chart.scales.x;
+        const yAxis  = chart.scales.y;
+        const target = window._targetHt;
+        const margin = 5;
+
+        // Estratégia: para cada mês, calculamos qual altura corresponde
+        // ao alvo final usando interpolação entre as curvas z-score da OMS.
+        // O canal converge naturalmente seguindo as curvas reais.
+        //
+        // Para cada mês m:
+        //   1. Calcular o z-score de `target` aos 228 meses (idade final)
+        //   2. Usar esse mesmo z-score para achar a altura correspondente
+        //      em cada mês m — interpolando entre as colunas da tabela RAW
+        //
+        // Isso produz uma curva que passa exatamente por `target` aos 19 anos
+        // e segue a curvatura natural das curvas OMS.
+
+        // Passo 1: z-score do alvo aos 228 meses
+        function getZofTarget(ht, moIdx) {
+          const r = activeRAW[moIdx];
+          const p3=r[1],p2=r[2],p1=r[3],z0=r[4],m1=r[5],m2=r[6],m3=r[7];
+          if (ht >= z0) {
+            if (ht <= p1) return (ht-z0)/(p1-z0);
+            if (ht <= p2) return 1+(ht-p1)/(p2-p1);
+            if (ht <= p3) return 2+(ht-p2)/(p3-p2);
+            return 3+(ht-p3)/(p3-p2);
+          } else {
+            if (ht >= m1) return -(z0-ht)/(z0-m1);
+            if (ht >= m2) return -1-(m1-ht)/(m1-m2);
+            if (ht >= m3) return -2-(m2-ht)/(m2-m3);
+            return -3-(m3-ht)/(m2-m3);
+          }
+        }
+
+        // Passo 2: dado um z-score, achar a altura correspondente num mês
+        function htFromZ(z, moIdx) {
+          const r = activeRAW[moIdx];
+          const p3=r[1],p2=r[2],p1=r[3],z0=r[4],m1=r[5],m2=r[6],m3=r[7];
+          if (z >= 0) {
+            if (z <= 1) return z0 + z*(p1-z0);
+            if (z <= 2) return p1 + (z-1)*(p2-p1);
+            if (z <= 3) return p2 + (z-2)*(p3-p2);
+            return p3 + (z-3)*(p3-p2);
+          } else {
+            if (z >= -1) return z0 + z*(z0-m1);
+            if (z >= -2) return m1 + (z+1)*(m1-m2);
+            if (z >= -3) return m2 + (z+2)*(m2-m3);
+            return m3 + (z+3)*(m2-m3);
+          }
+        }
+
+        // Índice do último mês (228)
+        const activeRAW = window.getActiveRAW ? window.getActiveRAW() : RAW;
+        const lastIdx = activeRAW.length - 1;
+
+        // Z-scores das três linhas do canal no mês final
+        const zMid = getZofTarget(target,          lastIdx);
+        const zTop = getZofTarget(target + margin,  lastIdx);
+        const zBot = getZofTarget(target - margin,  lastIdx);
+
+        // Gera pixels para cada curva usando os z-scores acima em cada mês
+        function getCurvePixels(z) {
+          return activeRAW.map((r, i) => ({
+            x: xAxis.getPixelForValue(r[0]),
+            y: yAxis.getPixelForValue(htFromZ(z, i))
+          }));
+        }
+
+        const ptsMid = getCurvePixels(zMid);
+        const ptsTop = getCurvePixels(zTop);
+        const ptsBot = getCurvePixels(zBot);
+
+        // ── Clip à área do gráfico ──
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(xAxis.left, yAxis.top, xAxis.right - xAxis.left, yAxis.bottom - yAxis.top);
+        ctx.clip();
+
+        // ── Faixa preenchida ──
+        ctx.beginPath();
+        ptsTop.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+        for (let i = ptsBot.length-1; i >= 0; i--) ctx.lineTo(ptsBot[i].x, ptsBot[i].y);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(123,45,139,0.08)';
+        ctx.fill();
+
+        // ── Hachura diagonal ──
+        ctx.save();
+        ctx.beginPath();
+        ptsTop.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+        for (let i = ptsBot.length-1; i >= 0; i--) ctx.lineTo(ptsBot[i].x, ptsBot[i].y);
+        ctx.closePath();
+        ctx.clip();
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(123,45,139,0.22)';
+        ctx.lineWidth = 0.8;
+        const xL=xAxis.left, xR=xAxis.right, yT=yAxis.top, yB=yAxis.bottom;
+        const span = (xR-xL)+(yB-yT);
+        for (let s = -span; s < span*2; s += 7) {
+          ctx.moveTo(xL+s, yT);
+          ctx.lineTo(xL+s+(yB-yT), yB);
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        // ── Bordas superior e inferior ──
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(123,45,139,0.40)';
+        ctx.lineWidth = 1;
+        ptsTop.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+        ctx.stroke();
+        ctx.beginPath();
+        ptsBot.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+        ctx.stroke();
+
+        // ── Linha central tracejada ──
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(123,45,139,0.85)';
+        ctx.lineWidth = 1.8;
+        ctx.setLineDash([6,4]);
+        ptsMid.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.restore();
+
+        // ── Labels no lado direito ──
+        const lx = xAxis.right + 3;
+        const lastTop = ptsTop[ptsTop.length-1];
+        const lastMid = ptsMid[ptsMid.length-1];
+        const lastBot = ptsBot[ptsBot.length-1];
+        ctx.save();
+        ctx.font = 'bold 10px Arial';
+        ctx.fillStyle = 'rgba(123,45,139,0.9)';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${(target+margin).toFixed(0)}`, lx, lastTop.y);
+        ctx.fillText(`${target.toFixed(1)}`,          lx, lastMid.y);
+        ctx.fillText(`${(target-margin).toFixed(0)}`, lx, lastBot.y);
+        ctx.font = '9px Arial';
+        ctx.fillStyle = 'rgba(123,45,139,0.75)';
+        ctx.fillText('Alvo', ptsMid[0].x+4, ptsMid[0].y-9);
+        ctx.restore();
+      }
+    },
+    // Borda magenta ao redor da área do gráfico
+    {
+      id: 'pinkBorder',
+      beforeDraw(chart) {
+        const ctx = chart.ctx;
+        const {left, top, right, bottom, width, height} = chart.chartArea;
+        const pad = 12;
+        ctx.save();
+        const borderCol = (window._currentSex === 'boy') ? '#1565C0' : '#d93bb5';
+        ctx.fillStyle = borderCol;
+        // top bar
+        ctx.fillRect(left - pad, top - pad, width + pad*2, pad);
+        // bottom bar
+        ctx.fillRect(left - pad, bottom, width + pad*2, pad);
+        // left bar
+        ctx.fillRect(left - pad, top - pad, pad, height + pad*2);
+        // right bar
+        ctx.fillRect(right, top - pad, pad + 28, height + pad*2);
+        ctx.restore();
+      }
+    }
+  ]
+};
+
+function mkLine(key, label, color, lw) {
+  return {
+    label,
+    data: Z[key],
+    borderColor: color,
+    borderWidth: lw,
+    pointRadius: 0,
+    showLine: true,
+    tension: 0.4,
+    fill: false,
+    _key: key,
+  };
+}
+
+// Cria o gráfico
+const canvas = document.getElementById('whoChart');
+canvas.height = 560;
+const chart = new Chart(canvas, cfg);
+
+// ── LÓGICA DE PONTOS ──
+
+// Pré-preenche a data da consulta com hoje
+(function() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm   = String(today.getMonth() + 1).padStart(2, '0');
+  const dd   = String(today.getDate()).padStart(2, '0');
+  document.getElementById('refdate').value = `${yyyy}-${mm}-${dd}`;
+})();
+
+function calcAgeMonths(dobStr, refStr) {
+  // Usa parsing manual para evitar problema de fuso horário UTC no JavaScript
+  // new Date("YYYY-MM-DD") interpreta como UTC, causando erro de 1 dia em fusos negativos
+  function parseLocal(str) {
+    const [y, mo, d] = str.split('-').map(Number);
+    return { year: y, month: mo, day: d };
+  }
+  const refDate = refStr ? parseLocal(refStr) : (() => {
+    const n = new Date();
+    return { year: n.getFullYear(), month: n.getMonth()+1, day: n.getDate() };
+  })();
+  const dobDate = parseLocal(dobStr);
+
+  let m = (refDate.year - dobDate.year) * 12 + (refDate.month - dobDate.month);
+  if (refDate.day < dobDate.day) m--;
+  return m;
+}
+
+// Paleta de cores por paciente (mesma cor em todas as medições dela)
+const PATIENT_COLORS = [
+  '#1565C0','#6A1B9A','#00695C','#BF360C',
+  '#AD1457','#37474F','#4527A0','#00695C'
+];
+
+// patients: { [key]: { color, dobStr, datasetIdx } }
+// points: array de medições individuais
+let patients = {};
+let patientOrder = [];
+let points = [];
+
+function getPatientColor(key) {
+  if (!patients[key]) {
+    const color = PATIENT_COLORS[patientOrder.length % PATIENT_COLORS.length];
+    patients[key] = { color, datasetIdx: null };
+    patientOrder.push(key);
+  }
+  return patients[key].color;
+}
+
+function addPoint() {
+  const refV    = document.getElementById('refdate').value;
+  const dobV    = document.getElementById('dob').value;
+  const htV     = parseFloat(document.getElementById('ht').value);
+  const lblV    = document.getElementById('lbl').value.trim() || 'Paciente';
+  const boneRaw = document.getElementById('boneage').value;
+  const boneV   = boneRaw !== '' ? parseFloat(boneRaw) : null;
+  const matV    = document.getElementById('maturation').value;
+  const err     = document.getElementById('error-msg');
+  err.textContent = '';
+
+  if (!refV) { err.textContent = 'Informe a data da consulta.'; return; }
+  if (!dobV) { err.textContent = 'Informe a data de nascimento.'; return; }
+  if (isNaN(htV) || htV < 60 || htV > 200) { err.textContent = 'Altura inválida (60–200 cm).'; return; }
+  if (boneV !== null && (isNaN(boneV) || boneV < 1 || boneV > 19)) {
+    err.textContent = 'Idade óssea inválida (1–19 anos).'; return;
+  }
+
+  const ageM = calcAgeMonths(dobV, refV);
+  if (ageM < 60 || ageM > 228) {
+    err.textContent = `Idade fora do intervalo 5–19 anos (calculada: ${(ageM/12).toFixed(1)} anos).`;
+    return;
+  }
+
+  const boneM = (boneV !== null && !isNaN(boneV)) ? Math.round(boneV * 12) : null;
+  const color  = getPatientColor(lblV);
+  const zScore = calcZ(ageM, htV);
+  const zBone  = boneM !== null ? calcZ(boneM, htV) : null;
+  const bpPred = (boneV !== null) ? calcBP(htV, boneV, matV) : null;
+  const pt     = { id: Date.now(), label: lblV, dob: dobV, ref: refV, ageM, ht: htV, color,
+                   z: zScore, boneM, boneV, zBone, mat: matV, bp: bpPred };
+  points.push(pt);
+
+  rebuildPointDatasets();
+  renderTable();
+  markUnsaved();
+
+  document.getElementById('ht').value = '';
+  document.getElementById('boneage').value = '';
+  updateBP();
+  document.getElementById('ht').focus();
+}
+
+function rebuildPointDatasets() {
+  chart.data.datasets.splice(7);
+
+  const byPatient = {};
+  points.forEach(p => {
+    if (!byPatient[p.label]) byPatient[p.label] = [];
+    byPatient[p.label].push(p);
+  });
+
+  patientOrder.forEach(key => {
+    if (!byPatient[key]) return;
+    const pts   = byPatient[key].slice().sort((a,b) => a.ageM - b.ageM);
+    const color = patients[key].color;
+
+    // ── Dataset 1: idade cronológica — bolinhas, com linha de conexão
+    chart.data.datasets.push({
+      label: key + ' (IC)',
+      _pt: true, _name: key,
+      data: pts.map(p => ({ x: p.ageM, y: p.ht })),
+      borderColor: color,
+      borderWidth: pts.length > 1 ? 1.5 : 0,
+      borderDash: [4, 3],
+      pointBackgroundColor: color,
+      pointBorderColor: 'white',
+      pointBorderWidth: 2,
+      pointRadius: 7,
+      pointHoverRadius: 9,
+      pointStyle: 'circle',
+      showLine: true,
+      tension: 0,
+      fill: false,
+      type: 'scatter',
+    });
+
+    // ── Dataset 2: idade óssea — X, apenas pontos que têm idade óssea
+    const bonePts = pts.filter(p => p.boneM !== null && p.boneM !== undefined && !isNaN(p.boneM));
+    if (bonePts.length > 0) {
+      chart.data.datasets.push({
+        label: key + ' (IO)',
+        _pt: true, _name: key + ' (IO)',
+        data: bonePts.map(p => ({ x: p.boneM, y: p.ht })),
+        borderColor: color,
+        borderWidth: bonePts.length > 1 ? 1.5 : 0,
+        borderDash: [2, 4],
+        pointBackgroundColor: 'white',
+        pointBorderColor: color,
+        pointBorderWidth: 2.5,
+        pointRadius: 8,
+        pointHoverRadius: 10,
+        pointStyle: 'crossRot',   // X aberto
+        showLine: true,
+        tension: 0,
+        fill: false,
+        type: 'scatter',
+      });
+    }
+  });
+
+  chart.update();
+
+  // Mostra legenda de símbolos se houver algum ponto com idade óssea
+  const hasAnyBone = points.some(p => p.boneM !== null);
+  const leg = document.getElementById('symbolLegend');
+  if (leg) leg.style.display = hasAnyBone ? 'flex' : 'none';
+}
+
+function removePoint(id) {
+  const idx = points.findIndex(p => p.id === id);
+  if (idx === -1) return;
+  const removed = points[idx];
+  points.splice(idx, 1);
+
+  // Se era o último ponto dessa paciente, remove ela da lista
+  const remaining = points.filter(p => p.label === removed.label);
+  if (remaining.length === 0) {
+    delete patients[removed.label];
+    patientOrder = patientOrder.filter(k => k !== removed.label);
+  }
+
+  rebuildPointDatasets();
+  renderTable();
+  markUnsaved();
+}
+
+function clearAll() {
+  points = [];
+  patients = {};
+  patientOrder = [];
+  chart.data.datasets.splice(7);
+  chart.update();
+  renderTable();
+  markUnsaved();
+}
+
+function formatDate(dateStr) {
+  const [y,m,d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// Calcula velocidade de crescimento (cm/ano) entre dois pontos
+function calcVelocity(p1, p2) {
+  // p1 = mais antigo, p2 = mais recente
+  // Usa as datas reais (ref) para cálculo preciso em dias
+  const d1 = new Date(p1.ref.split('-').join('-'));
+  const d2 = new Date(p2.ref.split('-').join('-'));
+  const days = (d2 - d1) / (1000 * 60 * 60 * 24);
+  if (days <= 0) return null;
+  return (p2.ht - p1.ht) / days * 365.25;
+}
+
+// Encontra o ponto mais próximo de N meses atrás
+function findPointNearMonths(pts, refPt, targetMonthsBack) {
+  // Calcula a data alvo
+  const refDate = new Date(refPt.ref.split('-').join('-'));
+  const targetMs = refDate.getTime() - targetMonthsBack * 30.44 * 24 * 3600 * 1000;
+  // Procura o ponto cujo ref está mais próximo dessa data
+  let best = null, bestDiff = Infinity;
+  pts.forEach(p => {
+    if (p.id === refPt.id) return;
+    const d = new Date(p.ref.split('-').join('-'));
+    const diff = Math.abs(d.getTime() - targetMs);
+    if (diff < bestDiff) { bestDiff = diff; best = p; }
+  });
+  return best;
+}
+
+function renderTable() {
+  const sec   = document.getElementById('ptsList');
+  const tbody = document.getElementById('ptsTbody');
+  tbody.innerHTML = '';
+  if (points.length === 0) {
+    sec.style.display = 'none';
+    renderVelocity([]);
+    return;
+  }
+  sec.style.display = '';
+
+  // Agrupa por paciente para exibição
+  const byPatient = {};
+  points.forEach(p => {
+    if (!byPatient[p.label]) byPatient[p.label] = [];
+    byPatient[p.label].push(p);
+  });
+
+  // Para velocidade — usa todos os pontos da mesma paciente principal
+  const mainKey = patientOrder[0];
+  const allPts  = mainKey && byPatient[mainKey]
+    ? byPatient[mainKey].slice().sort((a,b) => new Date(a.ref) - new Date(b.ref))
+    : [];
+
+  patientOrder.forEach(key => {
+    if (!byPatient[key]) return;
+    const pts = byPatient[key].slice().sort((a,b) => new Date(a.ref) - new Date(b.ref));
+    pts.forEach((p, i) => {
+      const yr    = Math.floor(p.ageM / 12);
+      const mo    = p.ageM % 12;
+      const zStr  = p.z     !== null ? p.z     : '—';
+      const zBStr = p.zBone !== null ? p.zBone : '—';
+      const boStr = p.boneV !== null ? p.boneV.toFixed(1) + ' anos' : '—';
+      const matStr = p.boneV !== null ? (p.mat === 'atrasada' ? 'Atrasada' : p.mat === 'avancada' ? 'Avançada' : 'Normal') : '—';
+      const bpStr = p.bp !== null ? `<strong>${p.bp.toFixed(1)} cm</strong>` : '—';
+
+      // Velocidade entre este e o anterior
+      let velStr = '—';
+      if (i > 0) {
+        const vel = calcVelocity(pts[i-1], p);
+        if (vel !== null) velStr = `${vel.toFixed(1)} cm/ano`;
+      }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${i === 0 ? `<span class="dot-preview" style="background:${p.color}"></span><strong>${p.label}</strong>` : ''}</td>
+        <td>${formatDate(p.ref)}</td>
+        <td>${formatDate(p.dob)}</td>
+        <td>${yr}a ${mo}m</td>
+        <td>${boStr}</td>
+        <td>${matStr}</td>
+        <td>${p.ht.toFixed(1)} cm</td>
+        <td>${zStr}</td>
+        <td>${zBStr}</td>
+        <td>${bpStr}</td>
+        <td>${velStr}</td>
+        <td class="no-print"><button class="btn-del" onclick="removePoint(${p.id})" title="Remover">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+
+  renderVelocity(allPts);
+}
+
+function renderVelocity(pts) {
+  const sec  = document.getElementById('velSection');
+  const grid = document.getElementById('velGrid');
+  if (!pts || pts.length < 2) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  grid.innerHTML = '';
+
+  const last = pts[pts.length - 1]; // ponto mais recente
+
+  function velCard(label, sub, p1, p2) {
+    if (!p1 || !p2) return '';
+    const vel = calcVelocity(p1, p2);
+    if (vel === null) return '';
+    const deltaCm = (p2.ht - p1.ht).toFixed(1);
+    return `<div class="vel-item">
+      <span class="vel-label">${label}</span>
+      <span class="vel-value">${vel.toFixed(1)} cm/ano</span>
+      <span class="vel-sub">${sub} · Δ ${deltaCm > 0 ? '+' : ''}${deltaCm} cm</span>
+    </div>`;
+  }
+
+  let html = '';
+
+  // 1. Entre as duas últimas medições
+  if (pts.length >= 2) {
+    const prev = pts[pts.length - 2];
+    html += velCard(
+      'Últimas 2 medições',
+      `${formatDate(prev.ref)} → ${formatDate(last.ref)}`,
+      prev, last
+    );
+  }
+
+  // 2. Últimos 12 meses — ponto mais próximo de 12 meses atrás
+  const near12 = findNearPeriod(pts, last, 12);
+  if (near12) {
+    html += velCard(
+      'Últimos ~12 meses',
+      `${formatDate(near12.ref)} → ${formatDate(last.ref)}`,
+      near12, last
+    );
+  }
+
+  // 3. Últimos 6 meses — ponto mais próximo de 6 meses atrás
+  const near6 = findNearPeriod(pts, last, 6);
+  if (near6 && near6 !== near12) {
+    html += velCard(
+      'Últimos ~6 meses',
+      `${formatDate(near6.ref)} → ${formatDate(last.ref)}`,
+      near6, last
+    );
+  }
+
+  if (!html) { sec.style.display = 'none'; return; }
+  grid.innerHTML = html;
+}
+
+// Encontra o ponto mais próximo de N meses antes do último
+function findNearPeriod(pts, last, months) {
+  const lastDate  = new Date(last.ref.split('-').join('-'));
+  const targetMs  = lastDate.getTime() - months * 30.4375 * 24 * 3600 * 1000;
+  let best = null, bestDiff = Infinity;
+  pts.forEach(p => {
+    if (p.id === last.id) return;
+    const d    = new Date(p.ref.split('-').join('-'));
+    const diff = Math.abs(d.getTime() - targetMs);
+    if (diff < bestDiff) { bestDiff = diff; best = p; }
+  });
+  // Só retorna se o ponto for "parecido" (dentro de 3 meses do alvo)
+  if (best && bestDiff < 3 * 30.44 * 24 * 3600 * 1000) return best;
+  return null;
+}
+
+// ── TABELA BAYLEY-PINNEAU ──
+// Formato: { io: [atrasada_col1, normal_col1, avancada_col1, atrasada_col2, normal_col2, avancada_col2] }
+// col1 = colunas da esquerda (estatura parcial); col2 = colunas da direita
+// Fonte: tabelas originais BP para meninas
+// A tabela original tem dois blocos de colunas. Usamos col1 quando disponível, col2 como alternativa.
+// Regra: se col1 disponível usa col1, senão col2. Se só col2, usa col2.
+// io em décimos de ano (ex: 6.0, 6.3, ...)
+const BP_TABLE = {
+  // io: [at1, no1, av1, at2, no2, av2]  (null = célula vazia na tabela original)
+   6.0: [0.733, 0.720, null,  0.680, null,  null ],
+   6.3: [0.742, 0.729, null,  0.690, null,  null ],
+   6.6: [0.751, 0.738, null,  0.700, null,  null ],
+   6.9: [0.763, 0.751, null,  0.709, null,  null ],
+   7.0: [0.770, 0.757, 0.722, 0.718, 0.695, 0.670],
+   7.3: [0.779, 0.765, 0.732, 0.728, 0.702, 0.676],
+   7.6: [0.788, 0.772, 0.742, 0.738, 0.709, 0.683],
+   7.9: [0.797, 0.782, 0.750, 0.747, 0.716, 0.689],
+   8.0: [0.804, 0.790, 0.760, 0.756, 0.723, 0.696],
+   8.3: [0.813, 0.801, 0.771, 0.765, 0.731, 0.703],
+   8.6: [0.823, 0.810, 0.784, 0.773, 0.739, 0.709],
+   8.9: [0.836, 0.821, 0.790, 0.779, 0.746, 0.715],
+   9.0: [0.841, 0.827, 0.800, 0.786, 0.752, 0.720],
+   9.3: [0.851, 0.836, 0.809, 0.794, 0.761, 0.728],
+   9.6: [0.858, 0.844, 0.819, 0.800, 0.769, 0.734],
+   9.9: [0.866, 0.853, 0.828, 0.807, 0.777, 0.741],
+  10.0: [0.874, 0.862, 0.841, 0.812, 0.784, 0.747],
+  10.3: [0.884, 0.874, 0.856, 0.816, 0.791, 0.753],
+  10.6: [0.896, 0.884, 0.870, 0.819, 0.795, 0.758],
+  10.9: [0.907, 0.896, 0.883, 0.821, 0.800, 0.763],
+  11.0: [0.918, 0.906, 0.887, 0.823, 0.804, 0.767],
+  11.3: [0.922, 0.910, 0.891, 0.827, 0.812, 0.776],
+  11.6: [0.926, 0.914, 0.897, 0.838, 0.818, 0.786],
+  11.9: [0.929, 0.918, 0.901, 0.839, 0.827, 0.800],
+  12.0: [0.932, 0.922, 0.913, 0.845, 0.834, 0.809],
+  12.3: [0.942, 0.932, 0.924, 0.852, 0.843, 0.818],
+  12.6: [0.949, 0.941, 0.935, 0.860, 0.853, 0.828],
+  12.9: [0.957, 0.950, 0.945, 0.869, 0.863, 0.839],
+  13.0: [0.964, 0.958, 0.955, 0.880, 0.876, 0.850],
+  13.3: [0.971, 0.967, 0.963, null,  0.890, 0.863],
+  13.6: [0.977, 0.974, 0.968, null,  0.902, 0.875],
+  13.9: [0.981, 0.978, 0.972, null,  0.914, 0.890],
+  14.0: [0.983, 0.980, 0.977, null,  0.927, 0.905],
+  14.3: [0.986, 0.983, 0.980, null,  0.938, 0.918],
+  14.6: [0.989, 0.986, 0.983, null,  0.948, 0.930],
+  14.9: [0.992, 0.988, 0.986, null,  0.958, 0.943],
+  15.0: [0.994, 0.990, 0.988, null,  0.968, 0.958],
+  15.3: [0.995, 0.991, 0.990, null,  0.973, 0.967],
+  15.6: [0.996, 0.993, 0.992, null,  0.976, 0.971],
+  15.9: [0.997, 0.994, 0.993, null,  0.980, 0.976],
+  16.0: [0.998, 0.996, 0.994, null,  0.982, 0.980],
+  16.3: [0.999, 0.996, 0.995, null,  0.985, 0.983],
+  16.6: [0.999, 0.997, 0.997, null,  0.987, 0.985],
+  16.9: [0.9995,0.998, 0.998, null,  0.989, 0.988],
+  17.0: [1.000, 0.999, 0.999, null,  0.991, 0.990],
+  17.3: [null,  null,  null,  null,  0.993, null ],
+  17.6: [null,  0.9995,0.9995,null,  0.994, null ],
+  17.9: [null,  null,  null,  null,  0.995, null ],
+  18.0: [null,  1.000, null,  null,  0.996, null ],
+  18.3: [null,  null,  null,  null,  0.998, null ],
+  18.6: [null,  null,  null,  null,  1.000, null ],
+};
+
+// Retorna fator BP interpolado para uma dada idade óssea e maturação
+// Tenta col1 primeiro; se nula, usa col2
+function getBPFactor(ioAnos, mat) {
+  const colIdx = { atrasada: 0, normal: 1, avancada: 2 }[mat] ?? 1;
+
+  // Encontra as duas chaves mais próximas para interpolação
+  const keys = Object.keys(BP_TABLE).map(Number).sort((a,b)=>a-b);
+  const io = Math.round(ioAnos * 10) / 10; // arredonda para 1 decimal
+
+  // Procura chave exata primeiro
+  let loKey = null, hiKey = null;
+  for (let i = 0; i < keys.length; i++) {
+    if (Math.abs(keys[i] - io) < 0.001) {
+      // chave exata
+      const row = BP_TABLE[keys[i]];
+      const v1 = row[colIdx];
+      const v2 = row[colIdx + 3];
+      const v = v1 !== null ? v1 : (v2 !== null ? v2 : null);
+      return v;
+    }
+    if (keys[i] < io) loKey = keys[i];
+    if (keys[i] > io && hiKey === null) hiKey = keys[i];
+  }
+
+  // Interpolação linear entre loKey e hiKey
+  if (loKey === null || hiKey === null) return null;
+
+  function getVal(k) {
+    const row = BP_TABLE[k];
+    const v1 = row[colIdx];
+    const v2 = row[colIdx + 3];
+    return v1 !== null ? v1 : (v2 !== null ? v2 : null);
+  }
+
+  const vLo = getVal(loKey);
+  const vHi = getVal(hiKey);
+  if (vLo === null || vHi === null) return vLo !== null ? vLo : vHi;
+
+  const frac = (io - loKey) / (hiKey - loKey);
+  return vLo + frac * (vHi - vLo);
+}
+
+var calcBP = function(alturaAtual, ioAnos, mat) {
+  const fator = getBPFactor(ioAnos, mat);
+  if (fator === null || fator === 0) return null;
+  return alturaAtual / fator;
+};
+
+// Atualiza a caixa de previsão em tempo real conforme o usuário digita
+function updateBP() {
+  const htRaw   = document.getElementById('ht').value;
+  const boRaw   = document.getElementById('boneage').value;
+  const mat     = document.getElementById('maturation').value;
+  const box     = document.getElementById('bpResult');
+  if (!box) return;
+
+  const ht  = parseFloat(htRaw);
+  const bio = parseFloat(boRaw);
+
+  if (isNaN(ht) || isNaN(bio) || ht < 60 || bio < 1 || bio > 19) {
+    box.className = 'bp-result empty';
+    box.innerHTML = 'preencha altura e I.O.';
+    return;
+  }
+
+  const pred = calcBP(ht, bio, mat);
+  if (pred === null) {
+    box.className = 'bp-result empty';
+    box.innerHTML = 'fator não disponível para esta I.O.';
+    return;
+  }
+
+  const matLabel = mat === 'atrasada' ? 'atrasada' : mat === 'avancada' ? 'avançada' : 'normal';
+  box.className = 'bp-result';
+  box.innerHTML = `<strong>${pred.toFixed(1)} cm</strong><br><span style="font-size:11px;color:#4a7a4a">(maturação ${matLabel})</span>`;
+}
+
+// ══════════════════════════════════════════════
+// PERSISTÊNCIA — Google Drive + localStorage fallback
+// ══════════════════════════════════════════════
+
+const CLIENT_ID   = '182415914086-fmpb9lsdb0gicdhg6s1igf9ooancn960.apps.googleusercontent.com';
+const SCOPES      = 'https://www.googleapis.com/auth/drive.file';
+const DB_FILENAME = 'curva_meninas_db.json';
+const DB_KEY      = 'curvaGirls_db';   // fallback localStorage
+
+let _currentKey = null;
+let _unsaved    = false;
+let _driveToken = null;
+let _driveFileId = null;
+let _driveDB    = {};   // cache em memória do banco do Drive
+
+// ── localStorage fallback ──
+function loadDB()      { try { return JSON.parse(localStorage.getItem(DB_KEY) || '{}'); } catch(e) { return {}; } }
+function saveDB(db)    { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function activeDB()    { return _driveToken ? _driveDB : loadDB(); }
+
+// ── UI helpers ──
+function markUnsaved() {
+  _unsaved = true;
+  const u = document.getElementById('unsavedBadge');
+  if (u) u.style.display = _currentKey ? 'inline' : 'none';
+}
+function flashSaved() {
+  _unsaved = false;
+  const s = document.getElementById('savedBadge');
+  const u = document.getElementById('unsavedBadge');
+  if (u) u.style.display = 'none';
+  if (s) { s.style.display = 'inline'; clearTimeout(s._t); s._t = setTimeout(() => s.style.display = 'none', 2500); }
+}
+function setDriveStatus(msg, cls) {
+  const el = document.getElementById('driveStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'drive-status ' + (cls || '');
+}
+
+// ══════════════════════════════════════════════
+// GOOGLE DRIVE — OAuth2 (implicit flow via GIS)
+// ══════════════════════════════════════════════
+
+let _tokenClient = null;
+
+function initGoogleDrive() {
+  if (typeof google === 'undefined') {
+    setTimeout(initGoogleDrive, 500);
+    return;
+  }
+  _tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (resp) => {
+      if (resp.error) {
+        setDriveStatus('não conectado — clique para conectar', 'error');
+        document.getElementById('btnDriveLogin').disabled = false;
+        document.getElementById('btnDriveLogin').innerHTML =
+          '<svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px;margin-right:4px"><path fill="white" d="M4.56 13.32L1.44 8l3.12-5.32h6.24L13.92 8l-3.12 5.32zm6.36 5.36L8.76 15h6.48l2.16 3.68zm8.64-5.36h-6.24L10.2 8l3.12-5.32h.12L22.56 8z"/></svg>Drive';
+        return;
+      }
+      _driveToken = resp.access_token;
+      document.getElementById('btnDriveLogin').textContent = '✓ Drive conectado';
+      document.getElementById('btnDriveLogin').disabled = true;
+      setDriveStatus('conectando...', '');
+      await driveLoadDB();
+    }
+  });
+  // Tenta conectar silenciosamente (sem popup) usando sessão Google já existente
+  _tokenClient.requestAccessToken({ prompt: '' });
+}
+
+function driveSignIn() {
+  if (!_tokenClient) { alert('API Google ainda carregando, tente em instantes.'); return; }
+  // Conexão manual — mostra popup de seleção de conta
+  _tokenClient.requestAccessToken({ prompt: 'select_account' });
+}
+
+// ── Fetch helper ──
+async function driveFetch(url, opts = {}) {
+  opts.headers = opts.headers || {};
+  opts.headers['Authorization'] = 'Bearer ' + _driveToken;
+  const r = await fetch(url, opts);
+  if (r.status === 401) { _driveToken = null; setDriveStatus('sessão expirada — reconecte', 'error'); return null; }
+  return r;
+}
+
+// ── Carrega o banco JSON do Drive (pasta raiz) ──
+async function driveLoadDB() {
+  setDriveStatus('carregando dados...', '');
+  try {
+    // Busca arquivo pelo nome na pasta raiz
+    const q = encodeURIComponent(`name='${DB_FILENAME}' and trashed=false`);
+    const list = await driveFetch(
+      `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc`
+    );
+    if (!list) return;
+    const data = await list.json();
+    if (data.files && data.files.length > 0) {
+      _driveFileId = data.files[0].id;
+      const dl = await driveFetch(
+        `https://www.googleapis.com/drive/v3/files/${_driveFileId}?alt=media`
+      );
+      if (!dl) return;
+      const text = await dl.text();
+      try {
+        _driveDB = JSON.parse(text);
+      } catch(e) {
+        _driveDB = {};
+      }
+    } else {
+      _driveDB = {};   // primeira vez — banco vazio no Drive
+    }
+    saveDB(_driveDB);  // copia local
+    const n = Object.keys(_driveDB).length;
+    setDriveStatus(`${n} paciente${n!==1?'s':''} no Drive`, 'connected');
+  } catch(e) {
+    setDriveStatus('erro ao carregar', 'error');
+    console.error('driveLoadDB error:', e);
+  }
+}
+
+// ── Salva o banco inteiro de volta ao Drive ──
+async function driveSaveDB(db) {
+  const body = JSON.stringify(db, null, 2);
+  try {
+    let r;
+    if (_driveFileId) {
+      // Atualiza arquivo existente (upload simples)
+      r = await driveFetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${_driveFileId}?uploadType=media`,
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body }
+      );
+      if (!r || !r.ok) {
+        console.error('Drive update failed:', r ? r.status : 'no response');
+        setDriveStatus('erro ao salvar', 'error');
+        return false;
+      }
+    } else {
+      // Cria arquivo novo na pasta raiz (multipart)
+      const meta = JSON.stringify({ name: DB_FILENAME, mimeType: 'application/json' });
+      const boundary = 'boundary_curva_app';
+      const multipart =
+        `--${boundary}
+` +
+        `Content-Type: application/json; charset=UTF-8
+
+` +
+        `${meta}
+` +
+        `--${boundary}
+` +
+        `Content-Type: application/json
+
+` +
+        `${body}
+` +
+        `--${boundary}--`;
+      r = await driveFetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+          body: multipart
+        }
+      );
+      if (!r || !r.ok) {
+        console.error('Drive create failed:', r ? r.status : 'no response');
+        setDriveStatus('erro ao criar arquivo', 'error');
+        return false;
+      }
+      const d = await r.json();
+      _driveFileId = d.id;
+      console.log('Drive file created, id:', _driveFileId);
+    }
+    const n = Object.keys(db).length;
+    setDriveStatus(`${n} paciente${n!==1?'s':''} no Drive`, 'connected');
+    return true;
+  } catch(e) {
+    setDriveStatus('erro ao salvar', 'error');
+    console.error('driveSaveDB error:', e);
+    return false;
+  }
+}
+
+// ══════════════════════════════════════════════
+// BUSCA E NAVEGAÇÃO DE PACIENTES
+// ══════════════════════════════════════════════
+
+function onSearchInput() {
+  const val = document.getElementById('searchInput').value.trim().toLowerCase();
+  const list = document.getElementById('searchSuggestions');
+  list.innerHTML = '';
+  if (!val) { list.style.display = 'none'; return; }
+  const db = activeDB();
+  const matches = Object.keys(db).filter(k => k.toLowerCase().includes(val)).slice(0, 8);
+  if (!matches.length) { list.style.display = 'none'; return; }
+  matches.forEach(k => {
+    const li = document.createElement('li');
+    li.textContent = k;
+    li.onclick = () => {
+      document.getElementById('searchInput').value = k;
+      list.style.display = 'none';
+      searchPatient();
+    };
+    list.appendChild(li);
+  });
+  list.style.display = 'block';
+}
+
+function searchPatient() {
+  const val = document.getElementById('searchInput').value.trim();
+  document.getElementById('searchSuggestions').style.display = 'none';
+  if (!val) { alert('Digite o nome ou ID da paciente.'); return; }
+  const db  = activeDB();
+  const rec = db[val];
+  if (!rec) {
+    if (confirm(`Paciente "${val}" não encontrada. Criar nova ficha?`)) {
+      _currentKey = val;
+      newPatientSilent();
+      document.getElementById('lbl').value = val;
+    }
+    return;
+  }
+  _currentKey = val;
+  _loadRecord(rec, val);
+}
+
+function _loadRecord(rec, key) {
+  points = rec.points.map(p => ({
+    ...p,
+    ageM:  Number(p.ageM),
+    ht:    Number(p.ht),
+    boneM: p.boneM != null ? Number(p.boneM) : null,
+    boneV: p.boneV != null ? Number(p.boneV) : null,
+    bp:    p.bp    != null ? Number(p.bp)    : null,
+  }));
+  patients     = {};
+  patientOrder = [];
+  points.forEach(p => getPatientColor(p.label));
+  if (rec.dob) document.getElementById('dob').value = rec.dob;
+  document.getElementById('lbl').value  = key;
+  document.getElementById('searchInput').value = key;
+  rebuildPointDatasets();
+  renderTable();
+  _unsaved = false;
+  document.getElementById('unsavedBadge').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════
+// SALVAR / APAGAR / NOVO
+// ══════════════════════════════════════════════
+
+async function savePatient() {
+  const lbl = document.getElementById('lbl').value.trim();
+  const key = lbl || _currentKey;
+  if (!key) { alert('Preencha o nome/ID da paciente antes de salvar.'); return; }
+  if (points.length === 0) { alert('Nenhum ponto marcado para salvar.'); return; }
+  if (!_driveToken) {
+    alert('⚠️ Drive não conectado.\n\nClique no botão azul "Drive" primeiro para conectar ao Google Drive.\nApós conectar, clique em Salvar novamente.');
+    return;
+  }
+  _currentKey = key;
+  document.getElementById('searchInput').value = key;
+
+  const rec = { dob: document.getElementById('dob').value, points: points.map(p => ({...p})) };
+
+  if (_driveToken) {
+    // Salva no Drive
+    _driveDB[key] = rec;
+    saveDB(_driveDB);  // atualiza cópia local também
+    await driveSaveDB(_driveDB);
+  } else {
+    // Fallback: só localStorage
+    const db = loadDB();
+    db[key] = rec;
+    saveDB(db);
+  }
+  flashSaved();
+}
+
+function deletePatient() {
+  const key = _currentKey || document.getElementById('searchInput').value.trim();
+  if (!key) { alert('Nenhuma paciente carregada para apagar.'); return; }
+  if (!confirm(`Apagar todos os dados de "${key}"? Esta ação não pode ser desfeita.`)) return;
+
+  if (_driveToken) {
+    delete _driveDB[key];
+    saveDB(_driveDB);
+    driveSaveDB(_driveDB);
+  } else {
+    const db = loadDB(); delete db[key]; saveDB(db);
+  }
+  newPatient();
+}
+
+function newPatient() {
+  if (_unsaved && points.length > 0) {
+    if (!confirm('Há dados não salvos. Deseja descartar e iniciar nova paciente?')) return;
+  }
+  newPatientSilent();
+}
+
+function newPatientSilent() {
+  points = []; patients = {}; patientOrder = [];
+  _currentKey = null; _unsaved = false;
+  chart.data.datasets.splice(7);
+  chart.update();
+  renderTable();
+  document.getElementById('dob').value       = '';
+  document.getElementById('lbl').value       = '';
+  document.getElementById('ht').value        = '';
+  document.getElementById('boneage').value   = '';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('unsavedBadge').style.display = 'none';
+  document.getElementById('savedBadge').style.display   = 'none';
+  updateBP();
+}
+
+// ══════════════════════════════════════════════
+// BACKUP / RESTAURAR (JSON local — fallback)
+// ══════════════════════════════════════════════
+
+function exportData() {
+  const db = _driveToken ? _driveDB : loadDB();
+  if (!Object.keys(db).length) { alert('Nenhum dado salvo para exportar.'); return; }
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'curva_meninas_backup.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      let count = 0;
+      if (_driveToken) {
+        Object.entries(imported).forEach(([k, v]) => { _driveDB[k] = v; count++; });
+        saveDB(_driveDB);
+        await driveSaveDB(_driveDB);
+      } else {
+        const db = loadDB();
+        Object.entries(imported).forEach(([k, v]) => { db[k] = v; count++; });
+        saveDB(db);
+      }
+      alert(`${count} paciente(s) importada(s)! Use o campo de busca para carregar.`);
+    } catch(err) { alert('Erro ao importar: arquivo inválido.'); }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ── INIT ──
+window.addEventListener('load', () => {
+  setDriveStatus('conectando ao Drive...', '');
+  initGoogleDrive();
+});
+
+// Fecha sugestões ao clicar fora
+document.addEventListener('click', e => {
+  if (!e.target.closest('#searchInput') && !e.target.closest('#searchSuggestions'))
+    document.getElementById('searchSuggestions').style.display = 'none';
+});
+
+// ══════════════════════════════════════════════
+// ALTURA ALVO (Canal Familiar)
+// ══════════════════════════════════════════════
+
+window._targetHt = null;
+
+function calcTargetHeight() {
+  const f = parseFloat(document.getElementById('fatherHt').value);
+  const m = parseFloat(document.getElementById('motherHt').value);
+  if (!isNaN(f) && !isNaN(m)) {
+    const target = ((f + m) / 2) - 6.5;
+    document.getElementById('targetHt').value = target.toFixed(1);
+  }
+}
+
+function applyTargetHeight() {
+  const v = parseFloat(document.getElementById('targetHt').value);
+  if (isNaN(v) || v < 100 || v > 220) {
+    alert('Informe uma altura alvo válida (pode calcular pelos dados dos pais ou digitar manualmente).');
+    return;
+  }
+  window._targetHt = v;
+  chart.update();
+}
+
+function updateTargetBand() {
+  // Atualiza em tempo real se já estava visível
+  if (window._targetHt !== null) {
+    const v = parseFloat(document.getElementById('targetHt').value);
+    if (!isNaN(v)) { window._targetHt = v; chart.update(); }
+  }
+}
+
+function clearTargetHeight() {
+  window._targetHt = null;
+  document.getElementById('targetHt').value  = '';
+  document.getElementById('fatherHt').value  = '';
+  document.getElementById('motherHt').value  = '';
+  chart.update();
+}
+
+// Patch: ao salvar, inclui targetHt no registro
+const _patchedSave = async function() {
+  const lbl = document.getElementById('lbl').value.trim();
+  const key = lbl || _currentKey;
+  if (!key) { alert('Preencha o nome/ID da paciente antes de salvar.'); return; }
+  if (points.length === 0) { alert('Nenhum ponto marcado para salvar.'); return; }
+  if (!_driveToken) {
+    alert('⚠️ Drive não conectado.\n\nClique no botão azul "Drive" primeiro para conectar ao Google Drive.\nApós conectar, clique em Salvar novamente.');
+    return;
+  }
+  _currentKey = key;
+  document.getElementById('searchInput').value = key;
+
+  const rec = {
+    dob: document.getElementById('dob').value,
+    points: points.map(p => ({...p})),
+    targetHt: window._targetHt,
+    fatherHt: document.getElementById('fatherHt').value,
+    motherHt: document.getElementById('motherHt').value,
+  };
+
+  if (_driveToken) {
+    _driveDB[key] = rec;
+    saveDB(_driveDB);  // salva cópia local imediatamente
+    const ok = await driveSaveDB(_driveDB);
+    if (ok) {
+      flashSaved();
+    } else {
+      alert('Erro ao salvar no Drive. Verifique sua conexão e tente novamente.');
+    }
+  } else {
+    const db = loadDB();
+    db[key] = rec;
+    saveDB(db);
+    flashSaved();
+  }
+};
+savePatient = _patchedSave;
+
+// Patch _loadRecord para restaurar altura alvo
+function _loadRecord(rec, key) {
+  points = rec.points.map(p => ({
+    ...p,
+    ageM:  Number(p.ageM),
+    ht:    Number(p.ht),
+    boneM: p.boneM != null ? Number(p.boneM) : null,
+    boneV: p.boneV != null ? Number(p.boneV) : null,
+    bp:    p.bp    != null ? Number(p.bp)    : null,
+  }));
+  patients     = {};
+  patientOrder = [];
+  points.forEach(p => getPatientColor(p.label));
+  if (rec.dob) document.getElementById('dob').value = rec.dob;
+  document.getElementById('lbl').value  = key;
+  document.getElementById('searchInput').value = key;
+
+  // Restaura altura alvo
+  window._targetHt = rec.targetHt || null;
+  document.getElementById('targetHt').value = rec.targetHt ? rec.targetHt.toFixed(1) : '';
+  document.getElementById('fatherHt').value = rec.fatherHt || '';
+  document.getElementById('motherHt').value = rec.motherHt || '';
+
+  rebuildPointDatasets();
+  renderTable();
+  _unsaved = false;
+  document.getElementById('unsavedBadge').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════
+// DADOS MENINOS — OMS 2007
+// ══════════════════════════════════════════════
+const RAW_BOYS = [
+[61,124.0,119.4,114.9,110.3,105.7,101.1,96.5],[62,124.7,120.0,115.4,110.8,106.2,101.6,96.9],
+[63,125.3,120.6,116.0,111.3,106.7,102.0,97.4],[64,125.9,121.2,116.5,111.9,107.2,102.5,97.8],
+[65,126.5,121.8,117.1,112.4,107.7,103.0,98.2],[66,127.1,122.4,117.7,112.9,108.2,103.4,98.7],
+[67,127.8,123.0,118.2,113.4,108.7,103.9,99.1],[68,128.4,123.6,118.7,113.9,109.1,104.3,99.5],
+[69,129.0,124.1,119.3,114.5,109.6,104.8,99.9],[70,129.6,124.7,119.8,115.0,110.1,105.2,100.4],
+[71,130.1,125.2,120.4,115.5,110.6,105.7,100.8],[72,130.7,125.8,120.9,116.0,111.0,106.1,101.2],
+[73,131.3,126.4,121.4,116.4,111.5,106.5,101.6],[74,131.9,126.9,121.9,116.9,111.9,107.0,102.0],
+[75,132.5,127.5,122.4,117.4,112.4,107.4,102.4],[76,133.0,128.0,123.0,117.9,112.9,107.8,102.8],
+[77,133.6,128.5,123.5,118.4,113.3,108.2,103.2],[78,134.2,129.1,124.0,118.9,113.8,108.7,103.6],
+[79,134.8,129.6,124.5,119.4,114.2,109.1,103.9],[80,135.3,130.2,125.0,119.8,114.7,109.5,104.3],
+[81,135.9,130.7,125.5,120.3,115.1,109.9,104.7],[82,136.5,131.2,126.0,120.8,115.6,110.3,105.1],
+[83,137.0,131.8,126.5,121.3,116.0,110.8,105.5],[84,137.6,132.3,127.0,121.7,116.4,111.2,105.9],
+[85,138.2,132.8,127.5,122.2,116.9,111.6,106.3],[86,138.7,133.4,128.0,122.7,117.3,112.0,106.6],
+[87,139.3,133.9,128.5,123.1,117.8,112.4,107.0],[88,139.8,134.4,129.0,123.6,118.2,112.8,107.4],
+[89,140.4,134.9,129.5,124.1,118.6,113.2,107.8],[90,140.9,135.5,130.0,124.5,119.1,113.6,108.1],
+[91,141.5,136.0,130.5,125.0,119.5,114.0,108.5],[92,142.0,136.5,131.0,125.5,119.9,114.4,108.9],
+[93,142.6,137.0,131.5,125.9,120.4,114.8,109.2],[94,143.1,137.5,132.0,126.4,120.8,115.2,109.6],
+[95,143.7,138.1,132.4,126.8,121.2,115.6,110.0],[96,144.2,138.6,132.9,127.3,121.6,116.0,110.3],
+[97,144.7,139.1,133.4,127.7,122.0,116.4,110.7],[98,145.3,139.6,133.9,128.2,122.5,116.7,111.0],
+[99,145.8,140.1,134.3,128.6,122.9,117.1,111.4],[100,146.4,140.6,134.8,129.0,123.3,117.5,111.7],
+[101,146.9,141.1,135.3,129.5,123.7,117.9,112.1],[102,147.4,141.6,135.8,129.9,124.1,118.3,112.4],
+[103,148.0,142.1,136.2,130.4,124.5,118.7,112.8],[104,148.5,142.6,136.7,130.8,124.9,119.0,113.1],
+[105,149.0,143.1,137.2,131.3,125.3,119.4,113.5],[106,149.5,143.6,137.6,131.7,125.7,119.8,113.8],
+[107,150.1,144.1,138.1,132.1,126.1,120.2,114.2],[108,150.6,144.6,138.6,132.6,126.6,120.5,114.5],
+[109,151.1,145.1,139.0,133.0,127.0,120.9,114.9],[110,151.7,145.6,139.5,133.4,127.4,121.3,115.2],
+[111,152.2,146.1,140.0,133.9,127.8,121.7,115.6],[112,152.7,146.6,140.4,134.3,128.2,122.0,115.9],
+[113,153.2,147.1,140.9,134.7,128.6,122.4,116.3],[114,153.8,147.6,141.4,135.2,129.0,122.8,116.6],
+[115,154.3,148.1,141.8,135.6,129.4,123.2,116.9],[116,154.8,148.6,142.3,136.1,129.8,123.5,117.3],
+[117,155.3,149.1,142.8,136.5,130.2,123.9,117.6],[118,155.9,149.5,143.2,136.9,130.6,124.3,118.0],
+[119,156.4,150.0,143.7,137.3,131.0,124.7,118.3],[120,156.9,150.5,144.2,137.8,131.4,125.0,118.7],
+[121,157.4,151.0,144.6,138.2,131.8,125.4,119.0],[122,157.9,151.5,145.1,138.6,132.2,125.8,119.3],
+[123,158.5,152.0,145.5,139.1,132.6,126.2,119.7],[124,159.0,152.5,146.0,139.5,133.0,126.5,120.0],
+[125,159.5,153.0,146.5,140.0,133.4,126.9,120.4],[126,160.1,153.5,146.9,140.4,133.8,127.3,120.7],
+[127,160.6,154.0,147.4,140.8,134.3,127.7,121.1],[128,161.1,154.5,147.9,141.3,134.7,128.1,121.4],
+[129,161.7,155.0,148.4,141.7,135.1,128.5,121.8],[130,162.2,155.5,148.9,142.2,135.5,128.8,122.2],
+[131,162.8,156.1,149.4,142.7,135.9,129.2,122.5],[132,163.3,156.6,149.8,143.1,136.4,129.7,122.9],
+[133,163.9,157.1,150.3,143.6,136.8,130.1,123.3],[134,164.4,157.6,150.8,144.1,137.3,130.5,123.7],
+[135,165.0,158.2,151.3,144.5,137.7,130.9,124.1],[136,165.6,158.7,151.9,145.0,138.2,131.3,124.5],
+[137,166.1,159.3,152.4,145.5,138.6,131.7,124.9],[138,166.7,159.8,152.9,146.0,139.1,132.2,125.3],
+[139,167.3,160.4,153.4,146.5,139.6,132.6,125.7],[140,167.9,160.9,153.9,147.0,140.0,133.1,126.1],
+[141,168.5,161.5,154.5,147.5,140.5,133.5,126.5],[142,169.1,162.1,155.0,148.0,141.0,134.0,126.9],
+[143,169.7,162.7,155.6,148.5,141.5,134.4,127.4],[144,170.3,163.3,156.2,149.1,142.0,134.9,127.8],
+[145,171.0,163.9,156.7,149.6,142.5,135.4,128.3],[146,171.6,164.5,157.3,150.2,143.0,135.9,128.7],
+[147,172.2,165.1,157.9,150.7,143.5,136.3,129.2],[148,172.9,165.7,158.5,151.3,144.0,136.8,129.7],
+[149,173.6,166.3,159.1,151.9,144.6,137.4,130.2],[150,174.2,167.0,159.7,152.4,145.2,137.9,130.7],
+[151,174.9,167.6,160.3,153.0,145.7,138.5,131.2],[152,175.6,168.3,161.0,153.6,146.3,139.0,131.7],
+[153,176.3,168.9,161.6,154.2,146.9,139.5,132.2],[154,176.9,169.6,162.2,154.8,147.5,140.1,132.7],
+[155,177.6,170.2,162.8,155.4,148.0,140.6,133.2],[156,178.3,170.9,163.5,156.0,148.6,141.2,133.8],
+[157,179.0,171.6,164.1,156.7,149.2,141.7,134.3],[158,179.7,172.2,164.7,157.3,149.8,142.3,134.8],
+[159,180.4,172.9,165.4,157.9,150.4,142.9,135.4],[160,181.1,173.5,166.0,158.5,151.0,143.5,135.9],
+[161,181.8,174.2,166.6,159.1,151.6,144.0,136.5],[162,182.4,174.8,167.3,159.7,152.2,144.5,137.0],
+[163,183.1,175.5,167.9,160.3,152.8,145.1,137.5],[164,183.7,176.1,168.5,160.9,153.3,145.7,138.0],
+[165,184.4,176.7,169.1,161.5,153.8,146.2,138.6],[166,185.0,177.4,169.7,162.1,154.4,146.7,139.1],
+[167,185.6,178.0,170.3,162.6,155.0,147.3,139.6],[168,186.3,178.6,170.9,163.2,155.5,147.8,140.1],
+[169,186.9,179.1,171.4,163.7,156.0,148.3,140.6],[170,187.4,179.7,172.0,164.3,156.5,148.8,141.1],
+[171,188.0,180.2,172.5,164.8,157.0,149.2,141.5],[172,188.6,180.8,173.0,165.3,157.5,149.7,142.0],
+[173,189.1,181.3,173.5,165.8,158.0,150.2,142.4],[174,189.6,181.8,174.1,166.3,158.5,150.7,143.0],
+[175,190.1,182.3,174.6,166.8,158.9,151.2,143.4],[176,190.6,182.8,175.0,167.2,159.3,151.7,143.9],
+[177,191.1,183.3,175.5,167.7,159.8,152.1,144.3],[178,191.5,183.7,175.9,168.1,160.3,152.5,144.7],
+[179,191.9,184.1,176.3,168.5,160.7,152.9,145.1],[180,192.4,184.6,176.8,169.0,161.2,153.4,145.5],
+[181,192.8,185.0,177.2,169.4,161.5,153.7,145.9],[182,193.2,185.4,177.5,169.7,161.9,154.1,146.3],
+[183,193.5,185.7,177.9,170.1,162.3,154.5,146.7],[184,193.9,186.1,178.3,170.5,162.7,154.9,147.1],
+[185,194.2,186.4,178.6,170.8,163.0,155.2,147.4],[186,194.6,186.8,178.9,171.1,163.3,155.5,147.7],
+[187,194.9,187.1,179.3,171.5,163.7,155.9,148.1],[188,195.2,187.4,179.6,171.8,164.0,156.2,148.4],
+[189,195.4,187.7,179.9,172.1,164.3,156.5,148.7],[190,195.7,188.0,180.1,172.4,164.6,156.8,149.0],
+[191,196.0,188.2,180.4,172.6,164.9,157.1,149.3],[192,196.2,188.4,180.7,172.9,165.1,157.4,149.6],
+[193,196.4,188.7,180.9,173.1,165.4,157.6,149.9],[194,196.7,188.9,181.1,173.4,165.6,157.9,150.1],
+[195,196.9,189.1,181.4,173.6,165.8,158.1,150.4],[196,197.0,189.3,181.6,173.8,166.1,158.4,150.6],
+[197,197.2,189.5,181.8,174.0,166.3,158.6,150.9],[198,197.4,189.7,182.0,174.2,166.5,158.8,151.1],
+[199,197.5,189.8,182.1,174.4,166.6,159.0,151.3],[200,197.7,190.0,182.3,174.6,166.8,159.2,151.5],
+[201,197.8,190.1,182.5,174.7,167.0,159.4,151.7],[202,197.9,190.2,182.6,174.9,167.2,159.5,151.9],
+[203,198.0,190.3,182.7,175.0,167.4,159.7,152.1],[204,198.1,190.4,182.8,175.2,167.5,159.9,152.2],
+[205,198.2,190.5,182.9,175.3,167.7,160.0,152.4],[206,198.2,190.6,183.0,175.4,167.8,160.2,152.5],
+[207,198.3,190.7,183.1,175.5,167.9,160.3,152.7],[208,198.4,190.8,183.2,175.6,168.0,160.4,152.8],
+[209,198.4,190.8,183.3,175.7,168.1,160.5,153.0],[210,198.4,190.9,183.3,175.8,168.2,160.6,153.1],
+[211,198.5,190.9,183.4,175.8,168.3,160.8,153.2],[212,198.5,191.0,183.4,175.9,168.4,161.0,153.3],
+[213,198.5,191.0,183.5,176.0,168.5,160.9,153.4],[214,198.5,191.0,183.5,176.0,168.5,161.0,153.5],
+[215,198.6,191.1,183.6,176.1,168.6,161.1,153.6],[216,198.6,191.1,183.7,176.1,168.7,161.2,153.7],
+[217,198.6,191.1,183.7,176.2,168.7,161.3,153.8],[218,198.6,191.1,183.8,176.2,168.8,161.4,153.9],
+[219,198.6,191.1,183.9,176.3,168.9,161.4,154.0],[220,198.6,191.1,183.9,176.3,168.9,161.5,154.1],
+[221,198.5,191.1,183.8,176.4,168.8,161.6,154.2],[222,198.5,191.1,183.8,176.4,168.8,161.6,154.2],
+[223,198.5,191.2,183.9,176.4,168.9,161.7,154.3],[224,198.5,191.2,183.9,176.4,168.9,161.7,154.4],
+[225,198.5,191.2,183.9,176.5,168.9,161.8,154.5],[226,198.5,191.1,183.9,176.5,168.9,161.8,154.5],
+[227,198.5,191.1,183.8,176.5,168.8,161.9,154.6],[228,198.4,191.1,183.8,176.5,169.2,161.9,154.6]
+];
+
+// ══════════════════════════════════════════════
+// ALTERNÂNCIA DE SEXO
+// ══════════════════════════════════════════════
+let _currentSex = 'girl'; // 'girl' | 'boy'
+window._currentSex = _currentSex;
+
+// Tabela Bayley-Pinneau para MENINOS
+// Fonte: tabela original BP masculina
+const BP_TABLE_BOYS = {
+   6.0:[0.774,0.761,null, 0.723,null, null],
+   6.3:[0.783,0.771,null, 0.733,null, null],
+   6.6:[0.792,0.781,null, 0.743,null, null],
+   6.9:[0.801,0.790,null, 0.752,null, null],
+   7.0:[0.810,0.800,0.776,0.761,0.742,0.726],
+   7.3:[0.819,0.810,0.786,0.770,0.751,0.735],
+   7.6:[0.827,0.818,0.795,0.779,0.760,0.743],
+   7.9:[0.836,0.827,0.805,0.788,0.769,0.752],
+   8.0:[0.844,0.836,0.814,0.797,0.778,0.761],
+   8.3:[0.852,0.844,0.822,0.806,0.787,0.770],
+   8.6:[0.860,0.852,0.831,0.814,0.796,0.779],
+   8.9:[0.868,0.860,0.839,0.822,0.804,0.788],
+   9.0:[0.875,0.868,0.848,0.831,0.813,0.796],
+   9.3:[0.882,0.875,0.856,0.839,0.821,0.804],
+   9.6:[0.889,0.882,0.864,0.847,0.829,0.812],
+   9.9:[0.896,0.889,0.872,0.855,0.837,0.820],
+  10.0:[0.902,0.896,0.880,0.863,0.845,0.828],
+  10.3:[0.908,0.902,0.887,0.870,0.852,0.836],
+  10.6:[0.913,0.908,0.894,0.877,0.859,0.843],
+  10.9:[0.919,0.914,0.901,0.884,0.866,0.850],
+  11.0:[0.924,0.920,0.907,0.891,0.873,0.857],
+  11.3:[0.929,0.925,0.913,0.897,0.880,0.864],
+  11.6:[0.933,0.930,0.919,0.903,0.886,0.870],
+  11.9:[0.938,0.935,0.925,0.909,0.892,0.876],
+  12.0:[0.942,0.939,0.930,0.915,0.898,0.882],
+  12.3:[0.946,0.943,0.935,0.920,0.904,0.888],
+  12.6:[0.950,0.947,0.940,0.925,0.909,0.893],
+  12.9:[0.953,0.951,0.944,0.930,0.914,0.899],
+  13.0:[0.956,0.955,0.949,0.935,0.919,0.904],
+  13.3:[0.960,0.958,0.953,0.940,0.924,0.909],
+  13.6:[0.963,0.961,0.957,0.944,0.929,0.914],
+  13.9:[0.966,0.964,0.961,0.948,0.933,0.919],
+  14.0:[0.968,0.967,0.964,0.952,0.938,0.923],
+  14.3:[0.971,0.969,0.967,0.956,0.942,0.928],
+  14.6:[0.973,0.972,0.970,0.960,0.946,0.932],
+  14.9:[0.975,0.974,0.973,0.963,0.950,0.936],
+  15.0:[0.977,0.976,0.975,0.966,0.953,0.940],
+  15.3:[0.979,0.978,0.978,0.969,0.957,0.944],
+  15.6:[0.980,0.980,0.980,0.972,0.960,0.947],
+  15.9:[0.982,0.982,0.982,0.975,0.963,0.951],
+  16.0:[0.983,0.983,0.983,0.977,0.966,0.954],
+  16.3:[0.985,0.984,0.985,0.979,0.969,0.957],
+  16.6:[0.986,0.986,0.986,0.981,0.971,0.960],
+  16.9:[0.987,0.987,0.987,0.983,0.973,0.963],
+  17.0:[0.988,0.988,0.988,0.985,0.975,0.966],
+  17.3:[0.989,0.989,0.989,0.987,0.977,0.968],
+  17.6:[0.990,0.990,0.9995,0.988,0.979,0.970],
+  17.9:[0.991,0.991,null, 0.990,0.981,0.972],
+  18.0:[0.993,0.993,null, 0.991,0.983,0.974],
+  18.3:[0.995,0.994,null, 0.993,0.985,0.976],
+  18.6:[0.997,0.996,null, 0.995,0.987,0.978],
+  19.0:[1.000,1.000,null, 1.000,0.990,0.980],
+};
+
+function getBPFactorBoys(ioAnos, mat) {
+  const colIdx = { atrasada: 0, normal: 1, avancada: 2 }[mat] ?? 1;
+  const keys = Object.keys(BP_TABLE_BOYS).map(Number).sort((a,b)=>a-b);
+  const io = Math.round(ioAnos * 10) / 10;
+
+  for (let i = 0; i < keys.length; i++) {
+    if (Math.abs(keys[i] - io) < 0.001) {
+      const row = BP_TABLE_BOYS[keys[i]];
+      const v1 = row[colIdx];
+      const v2 = row[colIdx + 3];
+      return v1 !== null ? v1 : (v2 !== null ? v2 : null);
+    }
+  }
+  let loKey = null, hiKey = null;
+  for (let i = 0; i < keys.length; i++) {
+    if (keys[i] < io) loKey = keys[i];
+    if (keys[i] > io && hiKey === null) hiKey = keys[i];
+  }
+  if (!loKey || !hiKey) return null;
+  function getV(k) {
+    const row = BP_TABLE_BOYS[k];
+    const v1 = row[colIdx]; const v2 = row[colIdx+3];
+    return v1 !== null ? v1 : (v2 !== null ? v2 : null);
+  }
+  const vLo = getV(loKey), vHi = getV(hiKey);
+  if (vLo === null || vHi === null) return vLo !== null ? vLo : vHi;
+  return vLo + (io - loKey) / (hiKey - loKey) * (vHi - vLo);
+}
+
+function switchSex(sex) {
+  if (_currentSex === sex) return;
+  _currentSex = sex;
+  window._currentSex = sex;
+
+  // Atualiza abas
+  const tg = document.getElementById('tabGirl');
+  const tb = document.getElementById('tabBoy');
+  const tb2 = document.getElementById('tabBar');
+  if (sex === 'girl') {
+    tg.className = 'tab-btn active-girl';
+    tb.className = 'tab-btn';
+    document.getElementById('chartTitle').innerHTML = 'Height-for-age &nbsp; GIRLS';
+    document.getElementById('chartTitle').style.color = '#c060c0';
+    document.getElementById('tabBar').style.borderBottomColor = '#d63384';
+  } else {
+    tg.className = 'tab-btn';
+    tb.className = 'tab-btn active-boy';
+    document.getElementById('chartTitle').innerHTML = 'Height-for-age &nbsp; BOYS';
+    document.getElementById('chartTitle').style.color = '#1565C0';
+    document.getElementById('tabBar').style.borderBottomColor = '#1565C0';
+  }
+
+  // Troca a tabela RAW ativa
+  const activeRAW = sex === 'girl' ? RAW : RAW_BOYS;
+
+  // Reconstrói os datasets de z-score
+  const newDatasets = [
+    mkLine2(activeRAW, 1, 'Z +3', '#1a1a1a', 2),
+    mkLine2(activeRAW, 2, 'Z +2', '#cc2200', 1.8),
+    mkLine2(activeRAW, 3, 'Z +1', '#e08000', 1.8),
+    mkLine2(activeRAW, 4, 'Z  0', '#2e8b00', 2.2),
+    mkLine2(activeRAW, 5, 'Z -1', '#e08000', 1.8),
+    mkLine2(activeRAW, 6, 'Z -2', '#cc2200', 1.8),
+    mkLine2(activeRAW, 7, 'Z -3', '#1a1a1a', 2),
+  ];
+
+  // Mantém datasets de pontos (índice 7+)
+  const pointDatasets = chart.data.datasets.slice(7);
+  chart.data.datasets = [...newDatasets, ...pointDatasets];
+
+  // Ajusta eixo Y conforme o sexo
+  if (sex === 'boy') {
+    chart.options.scales.y.max = 205;
+    chart.options.scales.y.min = 90;
+  } else {
+    chart.options.scales.y.max = 190;
+    chart.options.scales.y.min = 90;
+  }
+  chart.update();
+
+  // Limpa pacientes e pontos
+  newPatientSilent();
+
+  // Atualiza calcTargetHeight para usar offset correto
+  window._targetHt = null;
+  document.getElementById('targetHt').value = '';
+  document.getElementById('fatherHt').value = '';
+  document.getElementById('motherHt').value = '';
+}
+
+function mkLine2(rawData, col, label, color, lw) {
+  return {
+    label, data: rawData.map(r => ({x: r[0], y: r[col]})),
+    borderColor: color, borderWidth: lw,
+    pointRadius: 0, showLine: true, tension: 0.4, fill: false, type: 'scatter'
+  };
+}
+
+// Patch calcTargetHeight para usar +6.5 para meninos e -6.5 para meninas
+const _origCalcTarget = calcTargetHeight;
+function calcTargetHeight() {
+  const f = parseFloat(document.getElementById('fatherHt').value);
+  const m = parseFloat(document.getElementById('motherHt').value);
+  if (!isNaN(f) && !isNaN(m)) {
+    const offset = _currentSex === 'boy' ? 6.5 : -6.5;
+    const target = ((f + m) / 2) + offset;
+    document.getElementById('targetHt').value = target.toFixed(1);
+    updateTargetBand();
+  }
+}
+
+// Patch calcBP para usar tabela correta por sexo
+// Usa arrow function para evitar hoisting que sobrescreveria a definição original
+const _calcBPGirls = calcBP;
+calcBP = function(alturaAtual, ioAnos, mat) {
+  if (_currentSex === 'boy') {
+    const fator = getBPFactorBoys(ioAnos, mat);
+    if (!fator) return null;
+    return alturaAtual / fator;
+  }
+  return _calcBPGirls(alturaAtual, ioAnos, mat);
+};
+
+// Patch do plugin targetBand para usar RAW correto por sexo
+// O plugin já usa window._targetHt e a variável RAW global.
+// Precisamos que ele use o RAW correto.
+// Vamos fazer o plugin usar uma função que retorna o RAW ativo:
+window.getActiveRAW = () => _currentSex === 'girl' ? RAW : RAW_BOYS;
+
+</script>
+</body>
+</html>
