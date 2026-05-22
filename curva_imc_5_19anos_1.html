@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<title>IMC para Idade – 5 a 19 anos (OMS)</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+.page { background: white; width: 297mm; min-height: 210mm; margin: 0 auto; padding: 10mm 10mm 8mm 10mm; box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+.tab-bar { display: flex; gap: 0; margin-bottom: 10px; border-bottom: 3px solid #d63384; }
+.tab-btn { padding: 8px 28px; font-size: 14px; font-weight: bold; border: none; cursor: pointer; background: #f0f0f0; color: #666; border-radius: 6px 6px 0 0; margin-right: 4px; }
+.tab-btn.active-girl { background: #d63384; color: white; }
+.tab-btn.active-boy  { background: #1565C0; color: white; }
+.patient-panel { background: #f0f7ff; border: 1px solid #a8c8e8; border-radius: 6px; padding: 10px 14px; margin-bottom: 10px; display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.patient-panel label { font-size: 11px; color: #336; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 3px; }
+.patient-panel input { border: 1px solid #99b; border-radius: 4px; padding: 5px 8px; font-size: 13px; }
+.patient-panel button { background: #2a6099; color: white; border: none; border-radius: 4px; padding: 7px 13px; font-size: 13px; cursor: pointer; font-weight: bold; }
+.btn-save { background: #1a7a1a !important; }
+.btn-drive { background: #1a73e8 !important; }
+.btn-del-pt { background: #992222 !important; }
+.drive-status { font-size: 11px; padding: 3px 10px; border-radius: 3px; border: 1px solid #ccc; background: #f8f8f8; color: #555; }
+.drive-status.connected { background: #e8f5e9; border-color: #81c784; color: #2e7d32; }
+.drive-status.error { background: #fdecea; border-color: #e57373; color: #c62828; }
+.saved-badge { font-size:11px; color:#3a7a3a; background:#d8f0d8; border:1px solid #9ac89a; border-radius:3px; padding:2px 8px; display:none; }
+.unsaved-badge { font-size:11px; color:#996600; background:#fff5cc; border:1px solid #ddaa44; border-radius:3px; padding:2px 8px; display:none; }
+.search-wrap { position: relative; }
+#searchSuggestions { display:none; position:absolute; top:100%; left:0; z-index:999; background:white; border:1px solid #99b; border-radius:0 0 4px 4px; min-width:200px; max-height:200px; overflow-y:auto; box-shadow:0 4px 10px rgba(0,0,0,0.15); }
+#searchSuggestions li { list-style:none; padding:7px 12px; cursor:pointer; font-size:13px; }
+#searchSuggestions li:hover { background: #e8f0ff; }
+.form-panel { background: #f7f0f7; border: 1px solid #d8a8d8; border-radius: 6px; padding: 10px 14px 8px; margin-bottom: 10px; }
+.form-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.form-row + .form-row { padding-top: 6px; border-top: 1px dashed #d0b0d0; }
+.form-group { display: flex; flex-direction: column; }
+.form-panel label { font-size: 11px; color: #555; margin-bottom: 3px; font-weight: bold; text-transform: uppercase; }
+.form-panel input { border: 1px solid #bbb; border-radius: 4px; padding: 5px 8px; font-size: 13px; }
+.form-panel button { background: #d63384; color: white; border: none; border-radius: 4px; padding: 7px 14px; font-size: 13px; cursor: pointer; font-weight: bold; align-self: flex-end; }
+.btn-clear2 { background: #888 !important; color: white; border: none; border-radius: 4px; padding: 7px 12px; font-size: 13px; cursor: pointer; }
+#error-msg { font-size: 12px; color: #c0392b; min-height: 16px; margin-top: 4px; }
+.chart-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
+.chart-title { font-size: 22px; color: #c060c0; font-weight: bold; letter-spacing: 1px; }
+.chart-subtitle { font-size: 13px; color: #333; margin-top: 2px; }
+canvas#whoChart { display: block; width: 100% !important; max-height: 420px; }
+.footer-ref { font-size: 10px; color: #666; text-align: right; margin-top: 4px; }
+.points-list { margin-top: 10px; }
+.points-list table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.points-list th { background: #e0a0e0; padding: 3px 8px; text-align: left; border: 1px solid #ccc; }
+.points-list td { padding: 3px 8px; border: 1px solid #ddd; }
+.dot-prev { width:10px; height:10px; border-radius:50%; display:inline-block; vertical-align:middle; margin-right:4px; border:1.5px solid white; outline:1px solid rgba(0,0,0,0.3); }
+.btn-del { background:none; border:none; cursor:pointer; color:#999; font-size:14px; padding:0 2px; }
+.btn-del:hover { color: #c0392b; }
+/* Classificação de IMC */
+.imc-class { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; }
+.imc-magreza3 { background: #ffcccc; color: #800000; }
+.imc-magreza2 { background: #ffddcc; color: #803300; }
+.imc-magreza1 { background: #fff3cc; color: #806000; }
+.imc-normal   { background: #ccffcc; color: #006600; }
+.imc-sobrepeso{ background: #fff3cc; color: #806000; }
+.imc-obesidade1{ background: #ffddcc; color: #803300; }
+.imc-obesidade2{ background: #ffcccc; color: #800000; }
+.imc-obesidade3{ background: #ffbbbb; color: #660000; }
+.legend-imc { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; font-size: 11px; }
+@media print {
+  body { background: white; padding: 0; }
+  .page { box-shadow: none; width: 100%; padding: 8mm; }
+  .form-panel, .patient-panel, .tab-bar { display: none; }
+  .btn-del { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="tab-bar" id="tabBar">
+    <button class="tab-btn active-girl" id="tabGirl" onclick="switchSex('girl')">&#9792; Meninas</button>
+    <button class="tab-btn" id="tabBoy"  onclick="switchSex('boy')">&#9794; Meninos</button>
+  </div>
+
+  <div class="patient-panel">
+    <div class="form-group">
+      <label>Buscar paciente</label>
+      <div class="search-wrap">
+        <input type="text" id="searchInput" placeholder="Nome ou ID..." style="width:190px"
+               oninput="onSearchInput()" onkeydown="if(event.key==='Enter')searchPatient()">
+        <ul id="searchSuggestions"></ul>
+      </div>
+    </div>
+    <button onclick="searchPatient()">&#128269; Carregar</button>
+    <button onclick="newPatient()">&#65291; Nova</button>
+    <button class="btn-save" onclick="savePatient()">&#128190; Salvar</button>
+    <button class="btn-del-pt" onclick="deletePatient()">&#128465; Apagar</button>
+    <div style="flex:1"></div>
+    <button class="btn-drive" onclick="driveSignIn()" id="btnDriveLogin">Drive</button>
+    <span class="drive-status" id="driveStatus">nao conectado</span>
+    <button onclick="exportData()" style="background:#5a7a2a;color:white;border:none;border-radius:4px;padding:7px 10px;font-size:12px;cursor:pointer;">&#8595; Backup</button>
+    <button onclick="document.getElementById('importFile').click()" style="background:#7a4a2a;color:white;border:none;border-radius:4px;padding:7px 10px;font-size:12px;cursor:pointer;">&#8593; Restaurar</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    <span class="saved-badge" id="savedBadge">&#10003; Salvo</span>
+    <span class="unsaved-badge" id="unsavedBadge">&#9679; nao salvo</span>
+  </div>
+
+  <div class="form-panel">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data da consulta</label>
+        <input type="date" id="refdate" style="width:145px;background:#fffbe6;border-color:#c9a800">
+      </div>
+      <span style="font-size:11px;color:#888;align-self:flex-end;padding-bottom:6px;">Ajuste se necessario</span>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data de nascimento</label>
+        <input type="date" id="dob" style="width:145px">
+      </div>
+      <div class="form-group">
+        <label>Paciente / ID</label>
+        <input type="text" id="lbl" placeholder="Nome ou codigo" style="width:150px">
+      </div>
+      <div class="form-group">
+        <label>Peso (kg)</label>
+        <input type="number" id="peso" min="5" max="200" step="0.1" placeholder="ex: 42.5" style="width:100px" oninput="calcIMC()">
+      </div>
+      <div class="form-group">
+        <label>Altura (cm)</label>
+        <input type="number" id="altura" min="50" max="220" step="0.1" placeholder="ex: 145.0" style="width:100px" oninput="calcIMC()">
+      </div>
+      <div class="form-group">
+        <label>IMC (kg/m²)</label>
+        <input type="number" id="imc" min="5" max="60" step="0.01" placeholder="calculado" style="width:110px;background:#f0fff0;">
+      </div>
+      <button onclick="addPoint()">+ Marcar</button>
+      <button class="btn-clear2" onclick="clearAll()">Limpar</button>
+    </div>
+    <div id="error-msg"></div>
+  </div>
+
+  <div class="chart-header">
+    <div>
+      <div class="chart-title" id="chartTitle">BMI-for-age GIRLS</div>
+      <div class="chart-subtitle">5 to 19 years (z-scores)</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <svg width="44" height="44" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="48" fill="none" stroke="#00529b" stroke-width="4"/>
+        <ellipse cx="50" cy="50" rx="48" ry="22" fill="none" stroke="#00529b" stroke-width="2.5"/>
+        <ellipse cx="50" cy="50" rx="20" ry="48" fill="none" stroke="#00529b" stroke-width="2.5"/>
+        <line x1="2" y1="50" x2="98" y2="50" stroke="#00529b" stroke-width="2.5"/>
+        <rect x="44" y="10" width="12" height="30" rx="2" fill="#00529b"/>
+        <rect x="38" y="22" width="24" height="8" rx="2" fill="#00529b"/>
+      </svg>
+      <div style="text-align:right;font-size:11px;line-height:1.3;color:#333;"><strong>World Health</strong><br>Organization</div>
+    </div>
+  </div>
+
+  <canvas id="whoChart"></canvas>
+  <div class="footer-ref">2007 WHO Reference</div>
+
+  <div class="legend-imc">
+    <span class="imc-class imc-magreza3">Magreza acentuada (&lt;Z-3)</span>
+    <span class="imc-class imc-magreza2">Magreza (-3 a -2)</span>
+    <span class="imc-class imc-magreza1">Magreza leve (-2 a -1)</span>
+    <span class="imc-class imc-normal">Eutrofico (-1 a +1)</span>
+    <span class="imc-class imc-sobrepeso">Sobrepeso (+1 a +2)</span>
+    <span class="imc-class imc-obesidade1">Obesidade (+2 a +3)</span>
+    <span class="imc-class imc-obesidade2">Obesidade grave (&gt;Z+3)</span>
+  </div>
+
+  <div class="points-list" id="ptsList" style="display:none">
+    <table>
+      <thead>
+        <tr>
+          <th>Paciente</th><th>Data consulta</th><th>Data nasc.</th>
+          <th>Idade</th><th>Peso (kg)</th><th>Altura (cm)</th>
+          <th>IMC (kg/m²)</th><th>Z-score</th><th>Classificacao</th>
+          <th class="no-print"></th>
+        </tr>
+      </thead>
+      <tbody id="ptsTbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// == TABELAS OMS IMC para Idade (mes, Z-3, Z-2, Z-1, Z0, Z+1, Z+2, Z+3) ==
+// ATENCAO: ordem diferente da altura - aqui Z-3 e col 1, Z+3 e col 7
+const GIRLS = [
+[61,11.8,12.7,13.9,15.2,16.9,18.9,21.3],[62,11.8,12.7,13.9,15.2,16.9,18.9,21.4],
+[63,11.8,12.7,13.9,15.2,16.9,18.9,21.5],[64,11.8,12.7,13.9,15.2,16.9,18.9,21.5],
+[65,11.7,12.7,13.9,15.2,16.9,19.0,21.6],[66,11.7,12.7,13.9,15.2,16.9,19.0,21.7],
+[67,11.7,12.7,13.9,15.2,16.9,19.0,21.7],[68,11.7,12.7,13.9,15.3,17.0,19.1,21.8],
+[69,11.7,12.7,13.9,15.3,17.0,19.1,21.9],[70,11.7,12.7,13.9,15.3,17.0,19.1,22.0],
+[71,11.7,12.7,13.9,15.3,17.0,19.2,22.1],[72,11.7,12.7,13.9,15.3,17.0,19.2,22.1],
+[73,11.7,12.7,13.9,15.3,17.0,19.3,22.2],[74,11.7,12.7,13.9,15.3,17.0,19.3,22.3],
+[75,11.7,12.7,13.9,15.3,17.1,19.3,22.4],[76,11.7,12.7,13.9,15.3,17.1,19.4,22.5],
+[77,11.7,12.7,13.9,15.3,17.1,19.4,22.6],[78,11.7,12.7,13.9,15.3,17.1,19.5,22.7],
+[79,11.7,12.7,13.9,15.3,17.2,19.5,22.8],[80,11.7,12.7,13.9,15.3,17.2,19.6,22.9],
+[81,11.7,12.7,13.9,15.4,17.2,19.6,23.0],[82,11.7,12.7,13.9,15.4,17.2,19.7,23.1],
+[83,11.7,12.7,13.9,15.4,17.3,19.7,23.2],[84,11.8,12.7,13.9,15.4,17.3,19.8,23.3],
+[85,11.8,12.7,13.9,15.4,17.3,19.8,23.4],[86,11.8,12.8,14.0,15.4,17.4,19.9,23.5],
+[87,11.8,12.8,14.0,15.5,17.4,20.0,23.6],[88,11.8,12.8,14.0,15.5,17.4,20.0,23.7],
+[89,11.8,12.8,14.0,15.5,17.5,20.1,23.9],[90,11.8,12.8,14.0,15.5,17.5,20.1,24.0],
+[91,11.8,12.8,14.0,15.5,17.5,20.2,24.1],[92,11.8,12.8,14.0,15.6,17.6,20.3,24.2],
+[93,11.8,12.8,14.1,15.6,17.6,20.3,24.4],[94,11.9,12.9,14.1,15.6,17.6,20.4,24.5],
+[95,11.9,12.9,14.1,15.7,17.7,20.5,24.6],[96,11.9,12.9,14.1,15.7,17.7,20.6,24.8],
+[97,11.9,12.9,14.1,15.7,17.8,20.6,24.9],[98,11.9,12.9,14.2,15.7,17.8,20.7,25.1],
+[99,11.9,12.9,14.2,15.8,17.9,20.8,25.2],[100,11.9,13.0,14.2,15.8,17.9,20.9,25.3],
+[101,12.0,13.0,14.2,15.8,18.0,20.9,25.5],[102,12.0,13.0,14.3,15.9,18.0,21.0,25.6],
+[103,12.0,13.0,14.3,15.9,18.1,21.1,25.8],[104,12.0,13.0,14.3,15.9,18.1,21.2,25.9],
+[105,12.0,13.1,14.3,16.0,18.2,21.3,26.1],[106,12.1,13.1,14.4,16.0,18.2,21.3,26.2],
+[107,12.1,13.1,14.4,16.1,18.3,21.4,26.4],[108,12.1,13.1,14.4,16.1,18.3,21.5,26.5],
+[109,12.1,13.2,14.5,16.1,18.4,21.6,26.7],[110,12.1,13.2,14.5,16.2,18.4,21.7,26.8],
+[111,12.2,13.2,14.5,16.2,18.5,21.8,27.0],[112,12.2,13.2,14.6,16.3,18.6,21.9,27.2],
+[113,12.2,13.3,14.6,16.3,18.6,21.9,27.3],[114,12.2,13.3,14.6,16.3,18.7,22.0,27.5],
+[115,12.3,13.3,14.7,16.4,18.7,22.1,27.6],[116,12.3,13.4,14.7,16.4,18.8,22.2,27.8],
+[117,12.3,13.4,14.7,16.5,18.8,22.3,27.9],[118,12.3,13.4,14.8,16.5,18.9,22.4,28.1],
+[119,12.4,13.4,14.8,16.6,19.0,22.5,28.2],[120,12.4,13.5,14.8,16.6,19.0,22.6,28.4],
+[121,12.4,13.5,14.9,16.7,19.1,22.7,28.5],[122,12.4,13.5,14.9,16.7,19.2,22.8,28.7],
+[123,12.5,13.6,15.0,16.8,19.2,22.8,28.8],[124,12.5,13.6,15.0,16.8,19.3,22.9,29.0],
+[125,12.5,13.6,15.0,16.9,19.4,23.0,29.1],[126,12.5,13.7,15.1,16.9,19.4,23.1,29.3],
+[127,12.6,13.7,15.1,17.0,19.5,23.2,29.4],[128,12.6,13.7,15.2,17.0,19.6,23.3,29.6],
+[129,12.6,13.8,15.2,17.1,19.6,23.4,29.7],[130,12.7,13.8,15.3,17.1,19.7,23.5,29.9],
+[131,12.7,13.8,15.3,17.2,19.8,23.6,30.0],[132,12.7,13.9,15.3,17.2,19.9,23.7,30.2],
+[133,12.8,13.9,15.4,17.3,19.9,23.8,30.3],[134,12.8,14.0,15.4,17.4,20.0,23.9,30.5],
+[135,12.8,14.0,15.5,17.4,20.1,24.0,30.6],[136,12.9,14.0,15.5,17.5,20.2,24.1,30.8],
+[137,12.9,14.1,15.6,17.5,20.2,24.2,30.9],[138,12.9,14.1,15.6,17.6,20.3,24.3,31.1],
+[139,13.0,14.2,15.7,17.7,20.4,24.4,31.2],[140,13.0,14.2,15.7,17.7,20.5,24.5,31.4],
+[141,13.0,14.3,15.8,17.8,20.6,24.7,31.5],[142,13.1,14.3,15.8,17.9,20.6,24.8,31.6],
+[143,13.1,14.3,15.9,17.9,20.7,24.9,31.8],[144,13.2,14.4,16.0,18.0,20.8,25.0,31.9],
+[145,13.2,14.4,16.0,18.1,20.9,25.1,32.0],[146,13.2,14.5,16.1,18.1,21.0,25.2,32.2],
+[147,13.3,14.5,16.1,18.2,21.1,25.3,32.3],[148,13.3,14.6,16.2,18.3,21.1,25.4,32.4],
+[149,13.3,14.6,16.2,18.3,21.2,25.5,32.6],[150,13.4,14.7,16.3,18.4,21.3,25.6,32.7],
+[151,13.4,14.7,16.3,18.5,21.4,25.7,32.8],[152,13.5,14.8,16.4,18.5,21.5,25.8,33.0],
+[153,13.5,14.8,16.4,18.6,21.6,25.9,33.1],[154,13.5,14.8,16.5,18.7,21.6,26.0,33.2],
+[155,13.6,14.9,16.6,18.7,21.7,26.1,33.3],[156,13.6,14.9,16.6,18.8,21.8,26.2,33.4],
+[157,13.6,15.0,16.7,18.9,21.9,26.3,33.6],[158,13.7,15.0,16.7,18.9,22.0,26.4,33.7],
+[159,13.7,15.1,16.8,19.0,22.0,26.5,33.8],[160,13.8,15.1,16.8,19.1,22.1,26.6,33.9],
+[161,13.8,15.2,16.9,19.1,22.2,26.7,34.0],[162,13.8,15.2,16.9,19.2,22.3,26.8,34.1],
+[163,13.9,15.2,17.0,19.3,22.4,26.9,34.2],[164,13.9,15.3,17.0,19.3,22.4,27.0,34.3],
+[165,13.9,15.3,17.1,19.4,22.5,27.1,34.4],[166,14.0,15.4,17.1,19.4,22.6,27.1,34.5],
+[167,14.0,15.4,17.2,19.5,22.7,27.2,34.6],[168,14.0,15.4,17.2,19.6,22.7,27.3,34.7],
+[169,14.1,15.5,17.3,19.6,22.8,27.4,34.7],[170,14.1,15.5,17.3,19.7,22.9,27.5,34.8],
+[171,14.1,15.6,17.4,19.7,22.9,27.6,34.9],[172,14.1,15.6,17.4,19.8,23.0,27.7,35.0],
+[173,14.2,15.6,17.5,19.9,23.1,27.7,35.1],[174,14.2,15.7,17.5,19.9,23.1,27.8,35.1],
+[175,14.2,15.7,17.6,20.0,23.2,27.9,35.2],[176,14.3,15.7,17.6,20.0,23.3,28.0,35.3],
+[177,14.3,15.8,17.6,20.1,23.3,28.0,35.4],[178,14.3,15.8,17.7,20.1,23.4,28.1,35.4],
+[179,14.3,15.8,17.7,20.2,23.5,28.2,35.5],[180,14.4,15.9,17.8,20.2,23.5,28.2,35.5],
+[181,14.4,15.9,17.8,20.3,23.6,28.3,35.6],[182,14.4,15.9,17.8,20.3,23.6,28.4,35.7],
+[183,14.4,16.0,17.9,20.4,23.7,28.4,35.7],[184,14.5,16.0,17.9,20.4,23.7,28.5,35.8],
+[185,14.5,16.0,17.9,20.4,23.8,28.5,35.8],[186,14.5,16.0,18.0,20.5,23.8,28.6,35.8],
+[187,14.5,16.1,18.0,20.5,23.9,28.6,35.9],[188,14.5,16.1,18.0,20.6,23.9,28.7,35.9],
+[189,14.5,16.1,18.1,20.6,24.0,28.7,36.0],[190,14.6,16.1,18.1,20.6,24.0,28.8,36.0],
+[191,14.6,16.2,18.1,20.7,24.1,28.8,36.0],[192,14.6,16.2,18.2,20.7,24.1,28.9,36.1],
+[193,14.6,16.2,18.2,20.7,24.1,28.9,36.1],[194,14.6,16.2,18.2,20.8,24.2,29.0,36.1],
+[195,14.6,16.2,18.2,20.8,24.2,29.0,36.1],[196,14.6,16.2,18.3,20.8,24.3,29.0,36.2],
+[197,14.6,16.3,18.3,20.9,24.3,29.1,36.2],[198,14.7,16.3,18.3,20.9,24.3,29.1,36.2],
+[199,14.7,16.3,18.3,20.9,24.4,29.1,36.2],[200,14.7,16.3,18.3,20.9,24.4,29.2,36.2],
+[201,14.7,16.3,18.4,21.0,24.4,29.2,36.3],[202,14.7,16.3,18.4,21.0,24.4,29.2,36.3],
+[203,14.7,16.3,18.4,21.0,24.5,29.3,36.3],[204,14.7,16.4,18.4,21.0,24.5,29.3,36.3],
+[205,14.7,16.4,18.4,21.1,24.5,29.3,36.3],[206,14.7,16.4,18.4,21.1,24.6,29.3,36.3],
+[207,14.7,16.4,18.5,21.1,24.6,29.4,36.3],[208,14.7,16.4,18.5,21.1,24.6,29.4,36.3],
+[209,14.7,16.4,18.5,21.1,24.6,29.4,36.3],[210,14.7,16.4,18.5,21.2,24.6,29.4,36.3],
+[211,14.7,16.4,18.5,21.2,24.7,29.4,36.3],[212,14.7,16.4,18.5,21.2,24.7,29.5,36.3],
+[213,14.7,16.4,18.5,21.2,24.7,29.5,36.3],[214,14.7,16.4,18.5,21.2,24.7,29.5,36.3],
+[215,14.7,16.4,18.6,21.2,24.8,29.5,36.3],[216,14.7,16.4,18.6,21.3,24.8,29.5,36.3],
+[217,14.7,16.5,18.6,21.3,24.8,29.5,36.3],[218,14.7,16.5,18.6,21.3,24.8,29.6,36.3],
+[219,14.7,16.5,18.6,21.3,24.8,29.6,36.3],[220,14.7,16.5,18.6,21.3,24.8,29.6,36.3],
+[221,14.7,16.5,18.6,21.3,24.9,29.6,36.2],[222,14.7,16.5,18.6,21.3,24.9,29.6,36.2],
+[223,14.7,16.5,18.6,21.4,24.9,29.6,36.2],[224,14.7,16.5,18.6,21.4,24.9,29.6,36.2],
+[225,14.7,16.5,18.7,21.4,24.9,29.6,36.2],[226,14.7,16.5,18.7,21.4,24.9,29.6,36.2],
+[227,14.7,16.5,18.7,21.4,25.0,29.7,36.2],[228,14.7,16.5,18.7,21.4,25.0,29.7,36.2]
+];
+const BOYS = [
+[61,12.1,13.0,14.1,15.3,16.6,18.3,20.2],[62,12.1,13.0,14.1,15.3,16.6,18.3,20.2],
+[63,12.1,13.0,14.1,15.3,16.7,18.3,20.2],[64,12.1,13.0,14.1,15.3,16.7,18.3,20.3],
+[65,12.1,13.0,14.1,15.3,16.7,18.3,20.3],[66,12.1,13.0,14.1,15.3,16.7,18.4,20.4],
+[67,12.1,13.0,14.1,15.3,16.7,18.4,20.4],[68,12.1,13.0,14.1,15.3,16.7,18.4,20.5],
+[69,12.1,13.0,14.1,15.3,16.7,18.4,20.5],[70,12.1,13.0,14.1,15.3,16.7,18.5,20.6],
+[71,12.1,13.0,14.1,15.3,16.7,18.5,20.6],[72,12.1,13.0,14.1,15.3,16.8,18.5,20.7],
+[73,12.1,13.0,14.1,15.3,16.8,18.6,20.8],[74,12.2,13.1,14.1,15.3,16.8,18.6,20.8],
+[75,12.2,13.1,14.1,15.3,16.8,18.6,20.9],[76,12.2,13.1,14.1,15.4,16.8,18.7,21.0],
+[77,12.2,13.1,14.1,15.4,16.9,18.7,21.0],[78,12.2,13.1,14.1,15.4,16.9,18.7,21.1],
+[79,12.2,13.1,14.1,15.4,16.9,18.8,21.2],[80,12.2,13.1,14.2,15.4,16.9,18.8,21.3],
+[81,12.2,13.1,14.2,15.4,17.0,18.9,21.3],[82,12.2,13.1,14.2,15.4,17.0,18.9,21.4],
+[83,12.2,13.1,14.2,15.5,17.0,19.0,21.5],[84,12.3,13.1,14.2,15.5,17.0,19.0,21.6],
+[85,12.3,13.2,14.2,15.5,17.1,19.1,21.7],[86,12.3,13.2,14.2,15.5,17.1,19.1,21.8],
+[87,12.3,13.2,14.3,15.5,17.1,19.2,21.9],[88,12.3,13.2,14.3,15.6,17.2,19.2,22.0],
+[89,12.3,13.2,14.3,15.6,17.2,19.3,22.0],[90,12.3,13.2,14.3,15.6,17.2,19.3,22.1],
+[91,12.3,13.2,14.3,15.6,17.3,19.4,22.2],[92,12.3,13.2,14.3,15.6,17.3,19.4,22.4],
+[93,12.4,13.3,14.3,15.7,17.3,19.5,22.5],[94,12.4,13.3,14.4,15.7,17.4,19.6,22.6],
+[95,12.4,13.3,14.4,15.7,17.4,19.6,22.7],[96,12.4,13.3,14.4,15.7,17.4,19.7,22.8],
+[97,12.4,13.3,14.4,15.8,17.5,19.7,22.9],[98,12.4,13.3,14.4,15.8,17.5,19.8,23.0],
+[99,12.4,13.3,14.4,15.8,17.5,19.9,23.1],[100,12.4,13.4,14.5,15.8,17.6,19.9,23.3],
+[101,12.5,13.4,14.5,15.9,17.6,20.0,23.4],[102,12.5,13.4,14.5,15.9,17.7,20.1,23.5],
+[103,12.5,13.4,14.5,15.9,17.7,20.1,23.6],[104,12.5,13.4,14.5,15.9,17.7,20.2,23.8],
+[105,12.5,13.4,14.6,16.0,17.8,20.3,23.9],[106,12.5,13.5,14.6,16.0,17.8,20.3,24.0],
+[107,12.5,13.5,14.6,16.0,17.9,20.4,24.2],[108,12.6,13.5,14.6,16.0,17.9,20.5,24.3],
+[109,12.6,13.5,14.6,16.1,18.0,20.5,24.4],[110,12.6,13.5,14.7,16.1,18.0,20.6,24.6],
+[111,12.6,13.5,14.7,16.1,18.0,20.7,24.7],[112,12.6,13.6,14.7,16.2,18.1,20.8,24.9],
+[113,12.6,13.6,14.7,16.2,18.1,20.8,25.0],[114,12.7,13.6,14.8,16.2,18.2,20.9,25.1],
+[115,12.7,13.6,14.8,16.3,18.2,21.0,25.3],[116,12.7,13.6,14.8,16.3,18.3,21.1,25.5],
+[117,12.7,13.7,14.8,16.3,18.3,21.2,25.6],[118,12.7,13.7,14.9,16.4,18.4,21.2,25.8],
+[119,12.8,13.7,14.9,16.4,18.4,21.3,25.9],[120,12.8,13.7,14.9,16.4,18.5,21.4,26.1],
+[121,12.8,13.8,15.0,16.5,18.5,21.5,26.2],[122,12.8,13.8,15.0,16.5,18.6,21.6,26.4],
+[123,12.8,13.8,15.0,16.6,18.6,21.7,26.6],[124,12.9,13.8,15.0,16.6,18.7,21.7,26.7],
+[125,12.9,13.9,15.1,16.6,18.8,21.8,26.9],[126,12.9,13.9,15.1,16.7,18.8,21.9,27.0],
+[127,12.9,13.9,15.1,16.7,18.9,22.0,27.2],[128,13.0,13.9,15.2,16.8,18.9,22.1,27.4],
+[129,13.0,14.0,15.2,16.8,19.0,22.2,27.5],[130,13.0,14.0,15.2,16.9,19.0,22.3,27.7],
+[131,13.0,14.0,15.3,16.9,19.1,22.4,27.9],[132,13.1,14.1,15.3,16.9,19.2,22.5,28.0],
+[133,13.1,14.1,15.3,17.0,19.2,22.5,28.2],[134,13.1,14.1,15.4,17.0,19.3,22.6,28.4],
+[135,13.1,14.1,15.4,17.1,19.3,22.7,28.5],[136,13.2,14.2,15.5,17.1,19.4,22.8,28.7],
+[137,13.2,14.2,15.5,17.2,19.5,22.9,28.8],[138,13.2,14.2,15.5,17.2,19.5,23.0,29.0],
+[139,13.2,14.3,15.6,17.3,19.6,23.1,29.2],[140,13.3,14.3,15.6,17.3,19.7,23.2,29.3],
+[141,13.3,14.3,15.7,17.4,19.7,23.3,29.5],[142,13.3,14.4,15.7,17.4,19.8,23.4,29.6],
+[143,13.4,14.4,15.7,17.5,19.9,23.5,29.8],[144,13.4,14.5,15.8,17.5,19.9,23.6,30.0],
+[145,13.4,14.5,15.8,17.6,20.0,23.7,30.1],[146,13.5,14.5,15.9,17.6,20.1,23.8,30.3],
+[147,13.5,14.6,15.9,17.7,20.2,23.9,30.4],[148,13.5,14.6,16.0,17.8,20.2,24.0,30.6],
+[149,13.6,14.6,16.0,17.8,20.3,24.1,30.7],[150,13.6,14.7,16.1,17.9,20.4,24.2,30.9],
+[151,13.6,14.7,16.1,17.9,20.4,24.3,31.0],[152,13.7,14.8,16.2,18.0,20.5,24.4,31.1],
+[153,13.7,14.8,16.2,18.0,20.6,24.5,31.3],[154,13.7,14.8,16.3,18.1,20.7,24.6,31.4],
+[155,13.8,14.9,16.3,18.2,20.8,24.7,31.6],[156,13.8,14.9,16.4,18.2,20.8,24.8,31.7],
+[157,13.8,15.0,16.4,18.3,20.9,24.9,31.8],[158,13.9,15.0,16.5,18.4,21.0,25.0,31.9],
+[159,13.9,15.1,16.5,18.4,21.1,25.1,32.1],[160,14.0,15.1,16.6,18.5,21.1,25.2,32.2],
+[161,14.0,15.2,16.6,18.6,21.2,25.2,32.3],[162,14.0,15.2,16.7,18.6,21.3,25.3,32.4],
+[163,14.1,15.2,16.7,18.7,21.4,25.4,32.6],[164,14.1,15.3,16.8,18.7,21.5,25.5,32.7],
+[165,14.1,15.3,16.8,18.8,21.5,25.6,32.8],[166,14.2,15.4,16.9,18.9,21.6,25.7,32.9],
+[167,14.2,15.4,17.0,18.9,21.7,25.8,33.0],[168,14.3,15.5,17.0,19.0,21.8,25.9,33.1],
+[169,14.3,15.5,17.1,19.1,21.8,26.0,33.2],[170,14.3,15.6,17.1,19.1,21.9,26.1,33.3],
+[171,14.4,15.6,17.2,19.2,22.0,26.2,33.4],[172,14.4,15.7,17.2,19.3,22.1,26.3,33.5],
+[173,14.5,15.7,17.3,19.3,22.2,26.4,33.5],[174,14.5,15.7,17.3,19.4,22.2,26.5,33.6],
+[175,14.5,15.8,17.4,19.5,22.3,26.5,33.7],[176,14.6,15.8,17.4,19.5,22.4,26.6,33.8],
+[177,14.6,15.9,17.5,19.6,22.5,26.7,33.9],[178,14.6,15.9,17.5,19.6,22.5,26.8,33.9],
+[179,14.7,16.0,17.6,19.7,22.6,26.9,34.0],[180,14.7,16.0,17.6,19.8,22.7,27.0,34.1],
+[181,14.7,16.1,17.7,19.8,22.8,27.1,34.1],[182,14.8,16.1,17.8,19.9,22.8,27.1,34.2],
+[183,14.8,16.1,17.8,20.0,22.9,27.2,34.3],[184,14.8,16.2,17.9,20.0,23.0,27.3,34.3],
+[185,14.9,16.2,17.9,20.1,23.0,27.4,34.4],[186,14.9,16.3,18.0,20.1,23.1,27.4,34.5],
+[187,15.0,16.3,18.0,20.2,23.2,27.5,34.5],[188,15.0,16.3,18.1,20.3,23.3,27.6,34.6],
+[189,15.0,16.4,18.1,20.3,23.3,27.7,34.6],[190,15.0,16.4,18.2,20.4,23.4,27.7,34.7],
+[191,15.1,16.5,18.2,20.4,23.5,27.8,34.7],[192,15.1,16.5,18.2,20.5,23.5,27.9,34.8],
+[193,15.1,16.5,18.3,20.6,23.6,27.9,34.8],[194,15.2,16.6,18.3,20.6,23.7,28.0,34.8],
+[195,15.2,16.6,18.4,20.7,23.7,28.1,34.9],[196,15.2,16.7,18.4,20.7,23.8,28.1,34.9],
+[197,15.3,16.7,18.5,20.8,23.8,28.2,35.0],[198,15.3,16.7,18.5,20.8,23.9,28.3,35.0],
+[199,15.3,16.8,18.6,20.9,24.0,28.3,35.0],[200,15.3,16.8,18.6,20.9,24.0,28.4,35.1],
+[201,15.4,16.8,18.7,21.0,24.1,28.5,35.1],[202,15.4,16.9,18.7,21.0,24.2,28.5,35.1],
+[203,15.4,16.9,18.7,21.1,24.2,28.6,35.2],[204,15.4,16.9,18.8,21.1,24.3,28.6,35.2],
+[205,15.5,17.0,18.8,21.2,24.3,28.7,35.2],[206,15.5,17.0,18.9,21.2,24.4,28.7,35.2],
+[207,15.5,17.0,18.9,21.3,24.4,28.8,35.3],[208,15.5,17.1,18.9,21.3,24.5,28.9,35.3],
+[209,15.6,17.1,19.0,21.4,24.5,28.9,35.3],[210,15.6,17.1,19.0,21.4,24.6,29.0,35.3],
+[211,15.6,17.1,19.1,21.5,24.7,29.0,35.4],[212,15.6,17.2,19.1,21.5,24.7,29.1,35.4],
+[213,15.6,17.2,19.1,21.6,24.8,29.1,35.4],[214,15.7,17.2,19.2,21.6,24.8,29.2,35.4],
+[215,15.7,17.3,19.2,21.7,24.9,29.2,35.4],[216,15.7,17.3,19.2,21.7,24.9,29.2,35.4],
+[217,15.7,17.3,19.3,21.8,25.0,29.3,35.4],[218,15.7,17.3,19.3,21.8,25.0,29.3,35.5],
+[219,15.7,17.4,19.3,21.8,25.1,29.4,35.5],[220,15.8,17.4,19.4,21.9,25.1,29.4,35.5],
+[221,15.8,17.4,19.4,21.9,25.1,29.5,35.5],[222,15.8,17.4,19.4,22.0,25.2,29.5,35.5],
+[223,15.8,17.5,19.5,22.0,25.2,29.5,35.5],[224,15.8,17.5,19.5,22.0,25.3,29.6,35.5],
+[225,15.8,17.5,19.5,22.1,25.3,29.6,35.5],[226,15.8,17.5,19.6,22.1,25.4,29.6,35.5],
+[227,15.8,17.5,19.6,22.2,25.4,29.7,35.5],[228,15.9,17.6,19.6,22.2,25.4,29.7,35.5]
+];
+
+let _sex = 'girl';
+
+function rawFor(sex) { return sex === 'girl' ? GIRLS : BOYS; }
+
+// == PLUGINS ==
+var pluginBg = {
+  id: 'pluginBg',
+  beforeDraw: function(chart) {
+    var ctx=chart.ctx, ca=chart.chartArea;
+    ctx.save(); ctx.fillStyle='white';
+    ctx.fillRect(ca.left,ca.top,ca.width,ca.height); ctx.restore();
+  }
+};
+
+var pluginBorder = {
+  id: 'pluginBorder',
+  beforeDraw: function(chart) {
+    var ctx=chart.ctx, ca=chart.chartArea, pad=12;
+    var col = (_sex==='boy') ? '#1565C0' : '#d93bb5';
+    ctx.save(); ctx.fillStyle=col;
+    ctx.fillRect(ca.left-pad, ca.top-pad, ca.width+pad*2, pad);
+    ctx.fillRect(ca.left-pad, ca.bottom, ca.width+pad*2, pad);
+    ctx.fillRect(ca.left-pad, ca.top-pad, pad, ca.height+pad*2);
+    ctx.fillRect(ca.right, ca.top-pad, pad+32, ca.height+pad*2);
+    ctx.restore();
+  }
+};
+
+var pluginZLabels = {
+  id: 'pluginZLabels',
+  afterDraw: function(chart) {
+    var ctx=chart.ctx, xAxis=chart.scales.x, yAxis=chart.scales.y;
+    var raw=rawFor(_sex), last=raw[raw.length-1];
+    // last = [mo, Z-3, Z-2, Z-1, Z0, Z+1, Z+2, Z+3]
+    var xPos=xAxis.getPixelForValue(last[0])+6;
+    var labels=[
+      {col:7, text:'3',  color:'#1a1a1a'},
+      {col:6, text:'2',  color:'#cc2200'},
+      {col:5, text:'1',  color:'#e08000'},
+      {col:4, text:'0',  color:'#2e8b00'},
+      {col:3, text:'-1', color:'#e08000'},
+      {col:2, text:'-2', color:'#cc2200'},
+      {col:1, text:'-3', color:'#1a1a1a'},
+    ];
+    labels.forEach(function(l) {
+      var yPos=yAxis.getPixelForValue(last[l.col]);
+      ctx.save(); ctx.font='bold 11px Arial'; ctx.fillStyle=l.color;
+      ctx.textBaseline='middle'; ctx.fillText(l.text,xPos,yPos); ctx.restore();
+    });
+  }
+};
+
+var pluginYearLabels = {
+  id: 'pluginYearLabels',
+  afterDraw: function(chart) {
+    var ctx=chart.ctx, xAxis=chart.scales.x, yAxis=chart.scales.y;
+    var bottom=yAxis.bottom;
+    ctx.save();
+    ctx.font='bold 9px Arial'; ctx.fillStyle='#222';
+    ctx.textAlign='right'; ctx.textBaseline='top';
+    ctx.fillText('Months', xAxis.left-2, bottom+4);
+    ctx.fillText('Years',  xAxis.left-2, bottom+16);
+    ctx.font='11px Arial'; ctx.textAlign='center';
+    for(var yr=5; yr<=19; yr++){
+      var xPos=xAxis.getPixelForValue(yr*12);
+      ctx.fillText(String(yr), xPos, bottom+16);
+    }
+    ctx.restore();
+  }
+};
+
+// == CHART ==
+function makeDatasets(raw) {
+  // raw cols: [mo, Z-3, Z-2, Z-1, Z0, Z+1, Z+2, Z+3]
+  function mk(col, label, color, lw) {
+    return {
+      label: label,
+      data: raw.map(function(r){ return {x:r[0], y:r[col]}; }),
+      borderColor: color, borderWidth: lw,
+      pointRadius: 0, showLine: true, tension: 0, fill: false, type: 'scatter'
+    };
+  }
+  return [
+    mk(7,'Z+3','#1a1a1a',2),
+    mk(6,'Z+2','#cc2200',1.8),
+    mk(5,'Z+1','#e08000',1.8),
+    mk(4,'Z 0','#2e8b00',2.2),
+    mk(3,'Z-1','#e08000',1.8),
+    mk(2,'Z-2','#cc2200',1.8),
+    mk(1,'Z-3','#1a1a1a',2)
+  ];
+}
+
+var canvas = document.getElementById('whoChart');
+
+var chart = new Chart(canvas, {
+  type: 'scatter',
+  data: { datasets: makeDatasets(GIRLS) },
+  options: {
+    responsive: true, maintainAspectRatio: true, aspectRatio: 2.2, animation: false,
+    layout: { padding: {right:36, top:4, bottom:2, left:2} },
+    plugins: {
+      legend: {display: false},
+      tooltip: { callbacks: { label: function(ctx) {
+        if(ctx.dataset._pt) {
+          var mo=ctx.parsed.x, yr=Math.floor(mo/12), m=mo%12;
+          return (ctx.dataset._name||'')+': IMC '+ctx.parsed.y.toFixed(1)+' ('+yr+'a '+m+'m)';
+        }
+        return ctx.dataset.label+': '+ctx.parsed.y.toFixed(1)+' kg/m2';
+      }}}
+    },
+    scales: {
+      x: {
+        type:'linear', min:61, max:228,
+        border:{color:'#555'},
+        grid:{
+          color: function(ctx){ return (ctx.tick.value%12===0)?'rgba(0,0,0,0.25)':'rgba(0,0,0,0.10)'; },
+          lineWidth: function(ctx){ return (ctx.tick.value%12===0)?1.2:0.7; },
+          drawTicks: false
+        },
+        ticks:{
+          font:{size:10,family:'Arial'}, color:'#333', maxRotation:0,
+          callback: function(v){ var o=v%12; if(o===3)return'3'; if(o===6)return'6'; if(o===9)return'9'; return''; },
+          stepSize:3, autoSkip:false
+        },
+        title:{display:true, text:'Age (completed months and years)', font:{size:12,family:'Arial'}, color:'#222', padding:{top:22}}
+      },
+      y: {
+        min:10, max:38,
+        border:{color:'#555'},
+        grid:{
+          color: function(ctx){ return (ctx.tick.value%5===0)?'rgba(0,0,0,0.25)':'rgba(0,0,0,0.10)'; },
+          lineWidth: function(ctx){ return (ctx.tick.value%5===0)?1.2:0.7; },
+          drawTicks: false
+        },
+        ticks:{font:{size:10,family:'Arial'}, color:'#333', stepSize:1,
+          callback: function(v){ return Number.isInteger(v)?v:''; }},
+        title:{display:true, text:'BMI (kg/m2)', font:{size:12,family:'Arial'}, color:'#222'}
+      }
+    }
+  },
+  plugins: [pluginBg, pluginBorder, pluginZLabels, pluginYearLabels]
+});
+
+// == IMC ==
+function calcIMC() {
+  var p = parseFloat(document.getElementById('peso').value);
+  var h = parseFloat(document.getElementById('altura').value);
+  if (!isNaN(p) && !isNaN(h) && h > 0) {
+    var imc = p / ((h/100) * (h/100));
+    document.getElementById('imc').value = imc.toFixed(2);
+  }
+}
+
+// == Z-SCORE IMC ==
+function interpolateRow(raw, ageM) {
+  var row = null;
+  for(var i=0; i<raw.length; i++){
+    if(raw[i][0]===ageM){row=raw[i]; break;}
+  }
+  if(row) return row;
+  var lo=null, hi=null;
+  for(var i=0; i<raw.length; i++){
+    if(raw[i][0]<ageM) lo=raw[i];
+    if(raw[i][0]>ageM && !hi) hi=raw[i];
+  }
+  if(!lo||!hi) return null;
+  var f=(ageM-lo[0])/(hi[0]-lo[0]);
+  return [ageM,
+    lo[1]+f*(hi[1]-lo[1]), lo[2]+f*(hi[2]-lo[2]), lo[3]+f*(hi[3]-lo[3]),
+    lo[4]+f*(hi[4]-lo[4]), lo[5]+f*(hi[5]-lo[5]), lo[6]+f*(hi[6]-lo[6]),
+    lo[7]+f*(hi[7]-lo[7])
+  ];
+}
+
+function calcZimc(ageM, imc) {
+  // cols: [mo, Z-3, Z-2, Z-1, Z0, Z+1, Z+2, Z+3]
+  //        [0]   1    2    3   4    5    6    7
+  var row = interpolateRow(rawFor(_sex), ageM);
+  if(!row) return null;
+  var m3=row[1],m2=row[2],m1=row[3],z0=row[4],p1=row[5],p2=row[6],p3=row[7];
+  var z;
+  if(imc >= z0){
+    if(imc<=p1) z=(imc-z0)/(p1-z0);
+    else if(imc<=p2) z=1+(imc-p1)/(p2-p1);
+    else if(imc<=p3) z=2+(imc-p2)/(p3-p2);
+    else z=3+(imc-p3)/(p3-p2);
+  } else {
+    if(imc>=m1) z=-(z0-imc)/(z0-m1);
+    else if(imc>=m2) z=-1-(m1-imc)/(m1-m2);
+    else if(imc>=m3) z=-2-(m2-imc)/(m2-m3);
+    else z=-3-(m3-imc)/(m2-m3);
+  }
+  return z.toFixed(2);
+}
+
+function classifyIMC(z) {
+  var v = parseFloat(z);
+  if(isNaN(v)) return {label:'-', cls:''};
+  if(v < -3)   return {label:'Magreza acentuada', cls:'imc-magreza3'};
+  if(v < -2)   return {label:'Magreza', cls:'imc-magreza2'};
+  if(v < -1)   return {label:'Magreza leve', cls:'imc-magreza1'};
+  if(v <= 1)   return {label:'Eutrofico', cls:'imc-normal'};
+  if(v <= 2)   return {label:'Sobrepeso', cls:'imc-sobrepeso'};
+  if(v <= 3)   return {label:'Obesidade', cls:'imc-obesidade1'};
+  return {label:'Obesidade grave', cls:'imc-obesidade2'};
+}
+
+// == PONTOS ==
+var COLORS=['#1565C0','#6A1B9A','#00695C','#BF360C','#AD1457','#37474F','#4527A0'];
+var patients={}, patOrder=[], points=[];
+
+function getColor(key){
+  if(!patients[key]){patients[key]={color:COLORS[patOrder.length%COLORS.length]};patOrder.push(key);}
+  return patients[key].color;
+}
+function parseLocal(str){var p=str.split('-').map(Number);return{year:p[0],month:p[1],day:p[2]};}
+function calcAgeMonths(dobStr,refStr){
+  var ref=refStr?parseLocal(refStr):(function(){var n=new Date();return{year:n.getFullYear(),month:n.getMonth()+1,day:n.getDate()};})();
+  var dob=parseLocal(dobStr);
+  var m=(ref.year-dob.year)*12+(ref.month-dob.month);
+  if(ref.day<dob.day)m--;
+  return m;
+}
+function fmtDate(s){var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+
+function addPoint(){
+  var refV=document.getElementById('refdate').value;
+  var dobV=document.getElementById('dob').value;
+  var pesoV=parseFloat(document.getElementById('peso').value);
+  var altV=parseFloat(document.getElementById('altura').value);
+  var imcV=parseFloat(document.getElementById('imc').value);
+  var lblV=document.getElementById('lbl').value.trim()||'Paciente';
+  var err=document.getElementById('error-msg');
+  err.textContent='';
+  if(!refV){err.textContent='Informe a data da consulta.';return;}
+  if(!dobV){err.textContent='Informe a data de nascimento.';return;}
+  if(isNaN(imcV)||imcV<5||imcV>60){err.textContent='IMC invalido. Informe peso e altura ou digite o IMC diretamente.';return;}
+  var ageM=calcAgeMonths(dobV,refV);
+  if(ageM<61||ageM>228){err.textContent='Idade fora do intervalo 5-19 anos ('+( ageM/12).toFixed(1)+'a).';return;}
+  var color=getColor(lblV);
+  var z=calcZimc(ageM,imcV);
+  var cls=classifyIMC(z);
+  var pt={id:Date.now(),label:lblV,dob:dobV,ref:refV,ageM:ageM,
+          peso:isNaN(pesoV)?null:pesoV, altura:isNaN(altV)?null:altV,
+          imc:imcV, color:color, z:z, cls:cls.label, clsCss:cls.cls};
+  points.push(pt);
+  rebuildDs(); renderTable(); markUnsaved();
+  document.getElementById('peso').value='';
+  document.getElementById('altura').value='';
+  document.getElementById('imc').value='';
+  document.getElementById('peso').focus();
+}
+
+function rebuildDs(){
+  chart.data.datasets.splice(7);
+  var byP={};
+  points.forEach(function(p){if(!byP[p.label])byP[p.label]=[];byP[p.label].push(p);});
+  patOrder.forEach(function(key){
+    if(!byP[key])return;
+    var pts=byP[key].slice().sort(function(a,b){return a.ageM-b.ageM;});
+    var col=patients[key].color;
+    chart.data.datasets.push({
+      label:key, _pt:true, _name:key,
+      data:pts.map(function(p){return{x:p.ageM,y:p.imc};}),
+      borderColor:col, borderWidth:pts.length>1?1.5:0, borderDash:[4,3],
+      pointBackgroundColor:col, pointBorderColor:'white', pointBorderWidth:2,
+      pointRadius:7, pointHoverRadius:9, pointStyle:'circle',
+      showLine:true, tension:0, fill:false, type:'scatter'
+    });
+  });
+  chart.update();
+}
+
+function removePoint(id){
+  var idx=points.findIndex(function(p){return p.id===id;});
+  if(idx===-1)return;
+  var rem=points[idx]; points.splice(idx,1);
+  if(!points.find(function(p){return p.label===rem.label;})){
+    delete patients[rem.label]; patOrder=patOrder.filter(function(k){return k!==rem.label;});
+  }
+  rebuildDs(); renderTable(); markUnsaved();
+}
+function clearAll(){
+  points=[];patients={};patOrder=[];
+  chart.data.datasets.splice(7);chart.update();renderTable();markUnsaved();
+}
+
+function renderTable(){
+  var sec=document.getElementById('ptsList'),tbody=document.getElementById('ptsTbody');
+  tbody.innerHTML='';
+  if(!points.length){sec.style.display='none';return;}
+  sec.style.display='';
+  var byP={};
+  points.forEach(function(p){if(!byP[p.label])byP[p.label]=[];byP[p.label].push(p);});
+  patOrder.forEach(function(key){
+    if(!byP[key])return;
+    var pts=byP[key].slice().sort(function(a,b){return new Date(a.ref)-new Date(b.ref);});
+    pts.forEach(function(p,i){
+      var yr=Math.floor(p.ageM/12),mo=p.ageM%12;
+      var tr=document.createElement('tr');
+      var dot=i===0?'<span class="dot-prev" style="background:'+p.color+'"></span><strong>'+p.label+'</strong>':'';
+      var clsTag=p.cls?'<span class="imc-class '+p.clsCss+'">'+p.cls+'</span>':'-';
+      tr.innerHTML=
+        '<td>'+dot+'</td>'+
+        '<td>'+fmtDate(p.ref)+'</td><td>'+fmtDate(p.dob)+'</td>'+
+        '<td>'+yr+'a '+mo+'m</td>'+
+        '<td>'+(p.peso?p.peso.toFixed(1)+' kg':'-')+'</td>'+
+        '<td>'+(p.altura?p.altura.toFixed(1)+' cm':'-')+'</td>'+
+        '<td>'+p.imc.toFixed(2)+'</td>'+
+        '<td>'+(p.z||'-')+'</td>'+
+        '<td>'+clsTag+'</td>'+
+        '<td><button class="btn-del" onclick="removePoint('+p.id+')">&#10007;</button></td>';
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+// == TROCA DE SEXO ==
+function switchSex(sex){
+  if(_sex===sex)return;
+  _sex=sex;
+  var tg=document.getElementById('tabGirl'),tb=document.getElementById('tabBoy'),tb2=document.getElementById('tabBar');
+  if(sex==='girl'){
+    tg.className='tab-btn active-girl';tb.className='tab-btn';
+    document.getElementById('chartTitle').textContent='BMI-for-age GIRLS';
+    document.getElementById('chartTitle').style.color='#c060c0';
+    tb2.style.borderBottomColor='#d63384';
+  } else {
+    tg.className='tab-btn';tb.className='tab-btn active-boy';
+    document.getElementById('chartTitle').textContent='BMI-for-age BOYS';
+    document.getElementById('chartTitle').style.color='#1565C0';
+    tb2.style.borderBottomColor='#1565C0';
+  }
+  var raw=rawFor(sex);
+  var ptDs=chart.data.datasets.slice(7);
+  chart.data.datasets=makeDatasets(raw).concat(ptDs);
+  chart.update();
+  newPatientSilent();
+}
+
+// == PERSISTENCIA - Google Drive ==
+var CLIENT_ID='182415914086-fmpb9lsdb0gicdhg6s1igf9ooancn960.apps.googleusercontent.com';
+var SCOPES='https://www.googleapis.com/auth/drive.file';
+var DB_FILE='curva_imc_db.json';
+var DB_KEY='curvaImc_db';
+var _curKey=null,_unsaved=false,_token=null,_fileId=null,_db={};
+
+function loadDB(){try{return JSON.parse(localStorage.getItem(DB_KEY)||'{}');}catch(e){return{};}}
+function saveDB(db){localStorage.setItem(DB_KEY,JSON.stringify(db));}
+function activeDB(){return _token?_db:loadDB();}
+function markUnsaved(){_unsaved=true;var u=document.getElementById('unsavedBadge');if(u)u.style.display=_curKey?'inline':'none';}
+function flashSaved(){_unsaved=false;var s=document.getElementById('savedBadge'),u=document.getElementById('unsavedBadge');if(u)u.style.display='none';if(s){s.style.display='inline';clearTimeout(s._t);s._t=setTimeout(function(){s.style.display='none';},2500);}}
+function setStatus(msg,cls){var el=document.getElementById('driveStatus');if(!el)return;el.textContent=msg;el.className='drive-status '+(cls||'');}
+
+var _tc=null;
+function initDrive(){
+  if(typeof google==='undefined'){setTimeout(initDrive,500);return;}
+  _tc=google.accounts.oauth2.initTokenClient({
+    client_id:CLIENT_ID, scope:SCOPES,
+    callback:function(resp){
+      if(resp.error){setStatus('nao conectado','error');document.getElementById('btnDriveLogin').disabled=false;return;}
+      _token=resp.access_token;
+      document.getElementById('btnDriveLogin').textContent='Drive OK';
+      document.getElementById('btnDriveLogin').disabled=true;
+      setStatus('carregando...','');
+      driveLoad();
+    }
+  });
+  _tc.requestAccessToken({prompt:''});
+}
+function driveSignIn(){if(!_tc){alert('API carregando...');return;}_tc.requestAccessToken({prompt:'select_account'});}
+
+async function dFetch(url,opts){
+  opts=opts||{};opts.headers=opts.headers||{};opts.headers['Authorization']='Bearer '+_token;
+  var r=await fetch(url,opts);
+  if(r.status===401){_token=null;setStatus('sessao expirada','error');return null;}
+  return r;
+}
+async function driveLoad(){
+  try{
+    var q=encodeURIComponent("name='"+DB_FILE+"' and trashed=false");
+    var list=await dFetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)&orderBy=modifiedTime desc');
+    if(!list)return;
+    var data=await list.json();
+    if(data.files&&data.files.length>0){
+      _fileId=data.files[0].id;
+      var dl=await dFetch('https://www.googleapis.com/drive/v3/files/'+_fileId+'?alt=media');
+      if(!dl)return;
+      try{_db=JSON.parse(await dl.text());}catch(e){_db={};}
+    } else {_db={};}
+    saveDB(_db);
+    var n=Object.keys(_db).length;
+    setStatus(n+' paciente'+(n!==1?'s':'')+' no Drive','connected');
+  }catch(e){setStatus('erro ao carregar','error');}
+}
+async function driveSave(db){
+  var body=JSON.stringify(db,null,2);
+  try{
+    var r;
+    if(_fileId){
+      r=await dFetch('https://www.googleapis.com/upload/drive/v3/files/'+_fileId+'?uploadType=media',
+        {method:'PATCH',headers:{'Content-Type':'application/json'},body:body});
+    } else {
+      var meta=JSON.stringify({name:DB_FILE,mimeType:'application/json'});
+      var bd='bndimc';
+      var CRLF='\r\n';
+      var mp='--'+bd+CRLF+'Content-Type: application/json; charset=UTF-8'+CRLF+CRLF+meta+CRLF+'--'+bd+CRLF+'Content-Type: application/json'+CRLF+CRLF+body+CRLF+'--'+bd+'--';
+      r=await dFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+        {method:'POST',headers:{'Content-Type':'multipart/related; boundary='+bd},body:mp});
+      if(r&&r.ok){var d=await r.json();_fileId=d.id;}
+      var n=Object.keys(db).length;setStatus(n+' paciente'+(n!==1?'s':'')+' no Drive','connected');return true;
+    }
+    if(!r||!r.ok){setStatus('erro ao salvar','error');return false;}
+    var n=Object.keys(db).length;setStatus(n+' paciente'+(n!==1?'s':'')+' no Drive','connected');return true;
+  }catch(e){setStatus('erro ao salvar','error');return false;}
+}
+
+function onSearchInput(){
+  var val=document.getElementById('searchInput').value.trim().toLowerCase();
+  var list=document.getElementById('searchSuggestions');
+  list.innerHTML='';
+  if(!val){list.style.display='none';return;}
+  var db=activeDB();
+  var matches=Object.keys(db).filter(function(k){return k.toLowerCase().indexOf(val)>=0;}).slice(0,8);
+  if(!matches.length){list.style.display='none';return;}
+  matches.forEach(function(k){
+    var li=document.createElement('li');li.textContent=k;
+    li.onclick=function(){document.getElementById('searchInput').value=k;list.style.display='none';searchPatient();};
+    list.appendChild(li);
+  });
+  list.style.display='block';
+}
+function searchPatient(){
+  var val=document.getElementById('searchInput').value.trim();
+  document.getElementById('searchSuggestions').style.display='none';
+  if(!val){alert('Digite o nome ou ID.');return;}
+  var db=activeDB(),rec=db[val];
+  if(!rec){if(confirm('"'+val+'" nao encontrado. Criar novo?')){_curKey=val;newPatientSilent();document.getElementById('lbl').value=val;}return;}
+  _curKey=val;
+  points=rec.points.map(function(p){
+    return Object.assign({},p,{
+      imc:Number(p.imc), ageM:Number(p.ageM),
+      peso:p.peso!=null?Number(p.peso):null,
+      altura:p.altura!=null?Number(p.altura):null
+    });
+  });
+  patients={};patOrder=[];
+  points.forEach(function(p){getColor(p.label);});
+  if(rec.dob)document.getElementById('dob').value=rec.dob;
+  document.getElementById('lbl').value=val;
+  document.getElementById('searchInput').value=val;
+  rebuildDs();renderTable();
+  _unsaved=false;document.getElementById('unsavedBadge').style.display='none';
+}
+async function savePatient(){
+  var lbl=document.getElementById('lbl').value.trim(),key=lbl||_curKey;
+  if(!key){alert('Preencha o nome/ID.');return;}
+  if(!points.length){alert('Nenhum ponto marcado.');return;}
+  if(!_token){alert('Drive nao conectado. Clique no botao Drive primeiro.');return;}
+  _curKey=key;document.getElementById('searchInput').value=key;
+  var rec={dob:document.getElementById('dob').value,points:points.map(function(p){return Object.assign({},p);})};
+  _db[key]=rec;saveDB(_db);
+  var ok=await driveSave(_db);if(ok)flashSaved();else alert('Erro ao salvar.');
+}
+function deletePatient(){
+  var key=_curKey||document.getElementById('searchInput').value.trim();
+  if(!key){alert('Nenhum paciente carregado.');return;}
+  if(!confirm('Apagar "'+key+'"?'))return;
+  if(_token){delete _db[key];saveDB(_db);driveSave(_db);}
+  else{var db=loadDB();delete db[key];saveDB(db);}
+  newPatient();
+}
+function newPatient(){
+  if(_unsaved&&points.length>0&&!confirm('Dados nao salvos. Descartar?'))return;
+  newPatientSilent();
+}
+function newPatientSilent(){
+  points=[];patients={};patOrder=[];_curKey=null;_unsaved=false;
+  chart.data.datasets.splice(7);chart.update();renderTable();
+  ['dob','lbl','peso','altura','imc','searchInput'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.value='';
+  });
+  document.getElementById('unsavedBadge').style.display='none';
+  document.getElementById('savedBadge').style.display='none';
+}
+function exportData(){
+  var db=_token?_db:loadDB();
+  if(!Object.keys(db).length){alert('Nenhum dado para exportar.');return;}
+  var blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');
+  a.href=url;a.download='curva_imc_backup.json';a.click();URL.revokeObjectURL(url);
+}
+function importData(event){
+  var file=event.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      var imp=JSON.parse(e.target.result);var count=0;
+      if(_token){Object.entries(imp).forEach(function(kv){_db[kv[0]]=kv[1];count++;});saveDB(_db);await driveSave(_db);}
+      else{var db=loadDB();Object.entries(imp).forEach(function(kv){db[kv[0]]=kv[1];count++;});saveDB(db);}
+      alert(count+' paciente(s) importado(s)!');
+    }catch(err){alert('Erro ao importar.');}
+    event.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+// == INIT ==
+(function(){
+  var today=new Date();
+  var y=today.getFullYear(),m=String(today.getMonth()+1).padStart(2,'0'),d=String(today.getDate()).padStart(2,'0');
+  document.getElementById('refdate').value=y+'-'+m+'-'+d;
+  setStatus('conectando...','');
+  initDrive();
+})();
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#searchInput')&&!e.target.closest('#searchSuggestions'))
+    document.getElementById('searchSuggestions').style.display='none';
+});
+</script>
+</body>
+</html>
